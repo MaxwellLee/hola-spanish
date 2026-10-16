@@ -1,6 +1,8 @@
 # Luna 后端接入
 
-网页本身无需密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 的 AI 对话尚需部署本目录的 Worker 并设置服务端密钥。当前源码已实现接入，不代表已完成真实 Kimi 调用验证。
+网页本身无需密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 后端已部署到 `https://hola-study-companion.maxwelllee-hola.workers.dev`，学习网页已预填此地址。账户持有人仍需在 Cloudflare 中添加下面的两个 Secret，才能验证真实 Kimi 对话。
+
+已有部署请从下面第 3 步开始；第 1–2 步供重新部署时参考。
 
 ## 首次配置
 
@@ -9,8 +11,9 @@
 3. 在 Cloudflare 控制台打开该 Worker 的 Settings → Variables and Secrets，添加两个 **Secret**，不要添加为普通公开变量：
    - `MOONSHOT_API_KEY`：你的 Kimi API 密钥，仅在该加密配置框中输入。
    - `STUDY_ACCESS_TOKEN`：自行生成的至少 16 位随机学习口令，供你们使用网页时连接。它与 Kimi 密钥不同，不要重复使用其他账号的密码。
+   添加后点击 **Deploy** 使配置生效。
 4. 核对普通配置：`KIMI_MODEL` 必须是你的 Kimi API 账户支持的模型；默认值只是经文档核实的接口示例，仍需实际验证。中国大陆平台使用 `https://api.moonshot.cn/v1`；国际平台可改为 `https://api.moonshot.ai/v1`。二者的账号与密钥不可假定互通。
-5. 复制部署得到的 HTTPS 服务根地址。在网页右下角打开 Luna → 齿轮，填写后端地址和学习口令。**网页中不填写 Kimi 密钥。**
+5. 在网页右下角打开 Luna → 齿轮，保留已预填的后端地址，填写学习口令。自行重新部署时才需要替换成新服务的 HTTPS 根地址。**网页中不填写 Kimi 密钥。**
 6. 发送一句简短测试，例如“陪我练习自我介绍”，确认真实响应、费用和模型效果后再常态使用。
 
 `ALLOWED_ORIGIN` 填网页的源（例如 `https://maxwelllee.github.io`，不含仓库路径）。在其他域名部署时必须修改。仅限制来源不能替代认证，因此每次 AI 请求同时验证学习口令。
