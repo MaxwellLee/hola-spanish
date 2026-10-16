@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f3ec"><meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="description" content="现代西班牙语第一册的随身学习空间：全书阅读、点读、划词翻译与生词复习。">
+  <title>Hola · 慢慢学西语</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script><script type="module" src="companion.js"></script>
+</head>
+<body>
+  <a href="#reader" class="skip-link">跳到教材</a>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#page=17"><span class="brand-mark">h<span>•</span></span><span>hola<span class="brand-dot">.</span><small>慢慢学西语</small></span></a>
+    <div class="sidebar-label">MI PEQUEÑO MUNDO</div>
+    <nav class="main-nav" aria-label="主要导航"><button class="nav-item active" id="nav-book"><span>▤</span> 我的教材 <span class="nav-tag">01</span></button><button class="nav-item" id="nav-words"><span>☆</span> 生词小本 <span id="word-count">0</span></button><button class="nav-item" id="nav-plan"><span>☀</span> 学习小计划</button></nav>
+    <div class="course-heading"><span>现代西班牙语 · 第一册</span><span class="tiny">16 课</span></div>
+    <label class="search-box"><span>⌕</span><input id="search" placeholder="搜索教材文字…" aria-label="搜索全书文字"></label>
+    <div id="search-results" hidden></div><nav id="chapters" class="chapters" aria-label="课文目录"></nav>
+    <div class="sidebar-footer"><div class="little-sun">✺</div><p>一点点，也是在前进。<small>Poco a poco, paso a paso.</small></p></div>
+  </aside>
+  <div class="sidebar-shade" id="sidebar-shade" hidden></div>
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumb"><button id="menu" class="icon-button mobile-menu" aria-label="打开目录">☰</button><span>我的学习空间</span><span class="separator">/</span><strong>西班牙语</strong></div><div class="topbar-right"><span class="days"><span class="sun-icon">☀</span> 已学习 <b id="days-count">0</b> 天</span><button class="avatar" id="help" aria-label="使用帮助">?</button></div></header>
+    <main>
+      <section class="hero" aria-labelledby="welcome-title"><div class="hero-copy"><div class="eyebrow"><span></span> TU VIAJE EMPIEZA AQUÍ · 你的旅程，从这里开始</div><h1 id="welcome-title">每天一点，<br>离世界<span>更近一点。</span></h1><p>从第一句 Hola 开始，让西班牙语走进日常。</p><a class="hero-link" href="#reader">开始今天的学习 <span>↗</span></a></div><div class="hero-art" aria-hidden="true"><span class="art-sun">✺</span><span class="art-hola">¡Hola!</span><div class="arch arch-one"></div><div class="arch arch-two"></div><div class="plant"><i></i><i></i><i></i><i></i><b></b></div><span class="art-stamp">UN POQUITO<br>CADA DÍA</span><span class="art-line"></span></div></section>
+      <div class="learning-layout">
+        <section class="book-area" id="reader" tabindex="-1">
+          <div class="section-heading"><div><div class="eyebrow" id="unit-label">UNIDAD 01</div><h2 id="unit-title">你好，西班牙语</h2></div><button class="quiet-button" id="mark-read">○ 标记学过</button></div>
+          <div class="reader-toolbar"><div class="view-tabs" role="group" aria-label="阅读视图"><button data-view="text" class="selected" aria-pressed="true">清晰文字</button><button data-view="scan" aria-pressed="false">原书页面</button><button data-view="compare" aria-pressed="false">对照</button></div><div class="type-controls"><button id="font-down" aria-label="缩小文字">A−</button><button id="font-up" aria-label="放大文字">A＋</button></div></div>
+          <div class="page-navigation"><button id="prev-page" class="icon-button" aria-label="上一页">←</button><label>PDF 第 <input type="number" min="1" max="305" id="page-input" value="17" aria-label="PDF 页码"> / 305 页</label><span class="printed-page" id="printed-page">书内第 2 页</span><button id="next-page" class="icon-button" aria-label="下一页">→</button></div>
+          <div class="reader-card"><div class="reading-hint"><span class="hint-dot"></span><span>轻点单词查意思 · 选中整句看翻译 · 点喇叭听发音</span></div><div id="page-content" aria-live="polite"><div class="loading">正在打开教材…</div></div><div class="ocr-notice" id="ocr-notice">识别文字供点读与查词使用，尚未逐页人工校订；有疑问请对照原书。</div></div>
+          <div class="reader-bottom"><span id="page-caption">现代西班牙语 · 学生用书 1</span><button class="quiet-button" id="next-bottom">继续下一页 →</button></div>
+        </section>
+        <aside class="learning-rail">
+          <section class="audio-card"><div class="card-kicker">ESCUCHA Y REPITE</div><div class="card-title"><h3>让耳朵先熟悉它</h3><span class="headphones">♫</span></div><p>听一句，再轻轻跟读一句。</p><label class="field-label" for="voice">朗读声音</label><select id="voice"><option>正在寻找西语声音…</option></select><div class="voice-help" id="voice-info"></div><div class="speed-row"><label for="speed">语速 <output id="speed-label">0.85×</output></label><input type="range" id="speed" min="0.5" max="1.2" step="0.05" value="0.85" aria-label="朗读语速"></div><div class="audio-actions"><button id="listen-page" class="primary-button">▷ 朗读本页</button><button id="stop-audio" class="square-button" aria-label="停止朗读">■</button></div><button id="voice-preview" class="text-button">试听这个声音 ↗</button><div id="audio-status" class="tiny" role="status"></div></section>
+          <section class="daily-card"><div class="card-kicker">UN POQUITO CADA DÍA</div><h3>今天，留 15 分钟给自己</h3><button data-task="listen" class="task-row"><span class="task-check">○</span><span>听一小段课文<small>先听懂大意，不急着查词</small></span><b>3 min</b></button><button data-task="read" class="task-row"><span class="task-check">○</span><span>读一页，跟读三句<small>收藏今天真正想用的词</small></span><b>8 min</b></button><button data-task="review" class="task-row"><span class="task-check">○</span><span>复习，再说一句自己的话<small>学过的词，试着用出来</small></span><b>4 min</b></button><div class="daily-footer">按自己的节奏来，就很好。</div></section>
+          <section class="word-preview"><span class="card-kicker">MIS PALABRAS</span><div class="card-title"><h3>装进口袋的词</h3><button id="open-words" class="text-button">查看 ↗</button></div><div id="recent-words"><p class="muted">遇到喜欢的词，点一下 ☆<br>下次见面，就更熟悉了。</p></div></section>
+        </aside>
+      </div>
+      <footer class="footer">Hecho con cariño. <span>慢慢学，慢慢爱上另一种语言。</span><button id="about">关于与使用说明</button></footer>
+    </main>
+  </div>
+  <section id="translation" class="translation-popover" role="dialog" aria-label="划词翻译" hidden><div class="popover-top"><span id="translation-tag">西班牙语 → 中文</span><button id="close-translation" class="icon-button" aria-label="关闭翻译">×</button></div><div class="selection-row"><h3 id="selected-text" lang="es"></h3><button id="say-selection" class="speak-button" aria-label="朗读选中文字"></button></div><div id="translation-result" aria-live="polite"></div><div id="translation-source" class="tiny"></div><div class="popover-actions"><button id="save-word" class="quiet-button">☆ 收藏</button><button id="retry-translation" class="quiet-button">↻ 在线翻译</button><button id="ask-ai" class="quiet-button">问问 Luna</button></div><small class="privacy-note">在线翻译仅发送所选文字到 MyMemory，译文仅供参考。</small></section>
+  <dialog id="modal"><div class="modal-top"><h2 id="modal-title"></h2><button id="close-modal" class="icon-button" aria-label="关闭面板">×</button></div><div id="modal-body"></div></dialog>
+  <div id="toast" role="status" hidden></div>
+  <div class="mobile-audio"><button id="mobile-prev" aria-label="上一页">←</button><button id="mobile-listen">▷ 朗读本页</button><button id="mobile-stop" aria-label="停止朗读">■</button><button id="mobile-next" aria-label="下一页">→</button></div>
+</body>
+</html>

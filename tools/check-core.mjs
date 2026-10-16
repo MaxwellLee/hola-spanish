@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {normalizeWord,spanishParts,validPage,reviewUpdate,escapeHTML,localDay} from '../site/core.js';
+assert.equal(normalizeWord(' ¿Cómo? '),'cómo');
+assert.notEqual(normalizeWord('si'),normalizeWord('sí'));
+assert.deepEqual(spanishParts('中文 Hola, buenos días. 中文 mañana'),['Hola, buenos días.','mañana']);
+assert.equal(validPage('305'),305);assert.equal(validPage(0),null);assert.equal(validPage('1.5'),null);assert.equal(validPage('Infinity'),null);
+assert.equal(reviewUpdate({level:0},true,0).due,86400000);
+assert.equal(reviewUpdate({level:4},false,0).level,0);
+assert.equal(reviewUpdate({level:4},false,0).due,600000);
+assert.equal(escapeHTML('<img onerror="x">'),'&lt;img onerror=&quot;x&quot;&gt;');
+assert.match(localDay(),/^\d{4}-\d{2}-\d{2}$/);
+console.log('Core checks passed: accents, mixed scripts, page boundaries, review intervals, escaping, local dates');

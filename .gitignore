@@ -1,0 +1,13 @@
+private-book/
+private-output/
+tmp/
+node_modules/
+*.traineddata*
+*.zip
+*.pdf
+test-results/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+.wrangler/

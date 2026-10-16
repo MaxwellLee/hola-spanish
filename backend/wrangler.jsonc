@@ -1,0 +1,16 @@
+{
+  "name": "hola-study-companion",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-16",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://maxwelllee.github.io",
+    "MOONSHOT_BASE_URL": "https://api.moonshot.cn/v1",
+    "KIMI_MODEL": "kimi-k2.6",
+    "DAILY_REQUEST_LIMIT": "100"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "STUDY_QUOTA", "class_name": "StudyQuota" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StudyQuota"] }],
+  "observability": { "enabled": false }
+}

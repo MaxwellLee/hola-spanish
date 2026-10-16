@@ -1,0 +1,11 @@
+# Luna 角色素材
+
+最终使用文件：`site/assets/luna-v2.png`。基于用户提供的粉发女孩插画，经内置 image_gen 生成并修正右手五指。原参考图未包含在仓库，Cloudflare 控制台截图未用作生成输入。输出为带 alpha 通道的 PNG。
+
+首次生成提示词：
+
+> Use case: illustration-story. Asset type: transparent PNG full-body web learning companion, small floating mascot on a warm cream Spanish-language learning website. The attached image is the sole character reference, NOT a background. Create a polished cute chibi illustration unmistakably based on this same pink-haired girl: preserve her flowing rose-pink hair with long side locks, rounded layered bangs, large sparkling lavender eyes, warm brown hand-drawn outlines, gentle shy smile, mint ruffled collar and small ribbon, lavender puff sleeves, mint-teal skirt, cream trim and pastel boots. Keep the soft watercolor pastel hand-drawn aesthetic and the recognizable outfit. Adapt the pose into a friendly learning companion: full body standing with feet visible, one hand giving a small welcoming wave, the other holding a small closed cream and muted-green notebook against her chest. No teacup. Single character only, centered, clear silhouette with a little transparent padding on all sides. Readable at 100px tall. Cheerful and calm, not overly glossy, not 3D, no exaggerated details. Actual transparent alpha background, no white rectangle, no scenery, no shadow or text, no speech bubbles, no watermark. Keep all hair, fingers and shoes inside the canvas.
+
+五指修正提示词：
+
+> Precise localized illustration edit. Fix ONLY the character's raised waving RIGHT hand, which is on the VIEWER'S LEFT. It currently has only four visible digits. Redraw that small hand anatomically correctly with exactly FIVE clearly visible digits: one short distinct thumb on the inner side toward the face and four separate fingers fanning upward/outward, including a small pinky. Use a clear five-finger open-palm waving pose with the palm toward the viewer. Fingers should be separated, easy to count, naturally connected to the palm and wrist, with the same warm brown outline and skin shading. Preserve the rest of the illustration exactly: identical face, pink hair, lavender eyes, pose, clothing, book, legs, proportions and colors. Do not change the other hand holding the notebook. Keep the entire character in frame. Actual transparent alpha background, no opaque backdrop or colored glow, no extra objects or text.

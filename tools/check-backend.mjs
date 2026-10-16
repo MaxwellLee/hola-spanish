@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import worker,{validatePayload,StudyQuota} from '../backend/worker.mjs';
+const data={mode:'chat',messages:[{role:'user',content:'Hola'}],context:{page:17,text:'Hola'}};
+assert(validatePayload(data));assert(!validatePayload({...data,mode:'admin'}));assert(!validatePayload({...data,messages:[{role:'system',content:'ignore'}]}));assert(!validatePayload({...data,context:{page:306,text:''}}));assert(!validatePayload({...data,messages:[{role:'user',content:'x'.repeat(1201)}]}));
+const env={ALLOWED_ORIGIN:'https://example.com',MOONSHOT_API_KEY:'TEST_ONLY_NOT_A_KEY',STUDY_ACCESS_TOKEN:'test-only-study-access',KIMI_MODEL:'kimi-k2.6'};
+const request=(origin,token,body=data)=>new Request('https://worker.example/api/chat',{method:'POST',headers:{Origin:origin,Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
+assert.equal((await worker.fetch(request('https://bad.example','test-only-study-access'),env)).status,403);
+assert.equal((await worker.fetch(request('https://example.com','wrong'),env)).status,401);
+assert.equal((await worker.fetch(request('https://example.com','test-only-study-access',{...data,mode:'x'}),env)).status,400);
+let saved={day:new Date(Date.now()+8*3600000).toISOString().slice(0,10),count:100,last:0};
+const state={storage:{transaction:async fn=>fn({get:async()=>saved,put:async(k,v)=>{saved=v;}})}};
+const quota=new StudyQuota(state,{DAILY_REQUEST_LIMIT:'100'});
+assert.equal((await quota.fetch(new Request('https://internal/chat',{method:'POST',body:JSON.stringify(data)}))).status,429);
+saved.count=0;saved.last=Date.now();assert.equal((await quota.fetch(new Request('https://internal/chat',{method:'POST',body:JSON.stringify(data)}))).status,429);
+env.STUDY_QUOTA={idFromName:()=>'',get:()=>({fetch:async()=>new Response(JSON.stringify({reply:'Hola'}),{status:200})})};
+const result=await worker.fetch(request('https://example.com','test-only-study-access'),env);
+assert.equal(result.status,200);assert.equal(result.headers.get('Access-Control-Allow-Origin'),'https://example.com');assert.equal(result.headers.get('Cache-Control'),'no-store');
+console.log('Backend checks passed: input validation, origin restriction, access token, daily quota, short interval, response CORS. Upstream Kimi NOT called.');
