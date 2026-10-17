@@ -25,7 +25,12 @@ try{
   if(saved==='https://hola-study-companion.maxwelllee-hola.workers.dev')localStorage.setItem('hola-ai-endpoint',endpoint);
   else if(saved)endpoint=saved;
 }catch{}
-let access='';
+const connectionKey='hola-ai-connection';
+let access='',remember=true;
+try{
+  const saved=JSON.parse(localStorage.getItem(connectionKey)||'null');
+  if(saved?.endpoint===endpoint&&typeof saved.access==='string'&&saved.access.length>=16&&saved.access.length<=128)access=saved.access;
+}catch{}
 const prompts={chat:'请陪我练习西班牙语自我介绍。我是零基础，请每次只问一句，必要时给中文提示。',explain:'请用简单中文解释当前页最值得掌握的一个西班牙语句型，并给我一个替换练习。',correct:'请帮我改下面这句西班牙语：',quiz:'请根据当前页出一道适合零基础的题，等我回答后再解释答案。'};
 const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const voice=createSpeechDialogue({
@@ -50,7 +55,7 @@ const voice=createSpeechDialogue({
 });
 if(!Recognition){$('pet-voice').disabled=true;$('pet-language').disabled=true;$('pet-voice-status').textContent='此浏览器暂不支持语音对话。可用 Safari、Edge 或 Chrome，或用键盘麦克风输入。';}
 function showError(message){$('pet-error').hidden=false;$('pet-error').textContent=message;}
-function status(){$('pet-status').textContent=endpoint&&access?'已配置 · 发送后验证连接':'AI 尚未连接';}
+function status(){$('pet-status').textContent=endpoint&&access?(remember?'已记住此设备 · 可开始练习':'已配置 · 发送后验证连接'):'AI 尚未连接';}
 function open(){$('pet-panel').hidden=false;$('pet-toggle').hidden=true;$('pet-toggle').setAttribute('aria-expanded','true');status();}
 function close(){voice.stop();$('pet-panel').hidden=true;$('pet-toggle').hidden=false;$('pet-toggle').setAttribute('aria-expanded','false');$('pet-toggle').focus();}
 function connected(){
@@ -74,19 +79,33 @@ function addMessage(role,text){
 }
 function settings(){
   voice.stop();const dlg=$('modal');$('modal-title').textContent='连接 Luna';
-  $('modal-body').innerHTML=`<p>后端地址已填好，只需输入你们的学习口令。<b>不要填写 Kimi API 密钥。</b></p><label class="ai-field">后端地址<input id="ai-endpoint" type="url" value="${esc(endpoint)}" autocomplete="off"></label><label class="ai-field">学习口令<input id="ai-access" type="password" placeholder="独立学习口令，至少 16 位" autocomplete="off"></label><p class="tiny">口令只在当前页面内存中使用，刷新后需重新输入。对话只保留在当前页面。</p><div class="review-toolbar"><button class="primary-button" id="save-ai-settings">保存连接设置</button><button class="quiet-button" id="disconnect-ai">断开连接</button></div><p id="ai-config-note" class="tiny">尚未连接 AI 时，仍可使用教材点读、翻译和生词复习。</p>`;
+  $('modal-body').innerHTML=`<p>首次输入学习口令，保存后就能开始练习。<b>这里不填写 Kimi API 密钥。</b></p><label class="ai-field">后端地址<input id="ai-endpoint" type="url" value="${esc(endpoint)}" autocomplete="off"></label><label class="ai-field">学习口令<input id="ai-access" type="password" placeholder="独立学习口令，至少 16 位" autocomplete="off"></label><label class="ai-remember"><input id="ai-remember" type="checkbox"><span>记住这台设备，下次直接使用</span></label><p class="tiny">学习口令保存在此浏览器。手机与 iPad 各保存一次；清除网站数据或使用无痕模式后可能需要重填。对话只保留在当前页面。</p><div class="review-toolbar"><button class="primary-button" id="save-ai-settings">保存并连接</button><button class="quiet-button" id="disconnect-ai">退出并清除口令</button></div><p id="ai-config-note" class="tiny" role="status">尚未连接 AI 时，仍可使用教材点读、翻译和生词复习。</p>`;
+  $('ai-access').value=access;$('ai-remember').checked=remember;
   if(!dlg.open)dlg.showModal();
   $('save-ai-settings').onclick=()=>{
     try{
       const url=new URL($('ai-endpoint').value.trim());
       if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname))throw Error();
       const nextAccess=$('ai-access').value.trim();
+      if(/^sk-/i.test(nextAccess)){$('ai-config-note').textContent='这里填写独立学习口令，不是 Kimi API 密钥。';return;}
       if(nextAccess.length<16||nextAccess.length>128){$('ai-config-note').textContent='请输入 16–128 位的学习口令（不是 Kimi 密钥）。';return;}
-      endpoint=url.origin;access=nextAccess;try{localStorage.setItem('hola-ai-endpoint',endpoint);}catch{}
-      status();dlg.close();
+      endpoint=url.origin;access=nextAccess;remember=$('ai-remember').checked;
+      let stored=true;
+      try{
+        if(remember)localStorage.setItem(connectionKey,JSON.stringify({endpoint,access}));
+        else localStorage.removeItem(connectionKey);
+        localStorage.setItem('hola-ai-endpoint',endpoint);
+      }catch{stored=false;remember=false;}
+      status();dlg.close();$('pet-error').hidden=true;
+      if(!stored)showError('本次页面可以使用，但浏览器未能保存设置；重新打开后可能需要再输入口令。');
     }catch{$('ai-config-note').textContent='请输入完整的 HTTPS 服务地址，不带路径、参数或密钥。';}
   };
-  $('disconnect-ai').onclick=()=>{controller?.abort();access='';messages=[];try{localStorage.removeItem('hola-ai-endpoint');}catch{}status();dlg.close();};
+  $('disconnect-ai').onclick=()=>{
+    controller?.abort();access='';$('ai-access').value='';setMode(mode);let cleared=true;
+    try{localStorage.removeItem(connectionKey);localStorage.removeItem('hola-ai-endpoint');}catch{cleared=false;}
+    status();dlg.close();
+    if(!cleared)showError('本次页面已退出，但浏览器未允许清除保存内容。请在浏览器设置中清除此网站的数据。');
+  };
 }
 async function send(text,spoken=false){
   text=text.trim();if(busy||!text||!connected())return null;
@@ -99,12 +118,14 @@ async function send(text,spoken=false){
   try{
     const response=await fetch(`${endpoint}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${access}`},body:JSON.stringify({mode,messages:history,context:getLearningContext()}),signal:requestController.signal,referrerPolicy:'no-referrer'});
     const data=await response.json();
+    if(response.status===401){access='';try{localStorage.removeItem(connectionKey);}catch{}}
     if(!response.ok)throw Error(data.error||'连接暂时不可用，请稍后重试。');
     if(typeof data.reply!=='string'||!data.reply.trim())throw Error('没有收到有效回复，请重试。');
     if(requestController.signal.aborted)return null;
     messages=[...history,{role:'assistant',content:data.reply}];addMessage('assistant',data.reply);$('pet-input').value='';$('pet-status').textContent='已连接 · 一次练好一句';
     return data.reply;
   }catch(error){
+    if(requestController.signal.aborted&&!access)return null;
     if(error.name==='AbortError'&&spoken&&!voice.active)return null;
     showError(error.name==='AbortError'?'请求已取消或等待超时，请重试。':error instanceof TypeError?'网络暂时连接不上，请检查网络后重试。':error.message);
     $('pet-status').textContent='本次请求未成功';return null;

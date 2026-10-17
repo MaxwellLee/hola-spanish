@@ -27,13 +27,76 @@ const originalCSS=execFileSync('git',['show','e00a9df:site/styles.css'],{encodin
       await context.close();
     }
     console.log('Connection settings passed: Tencent default, old Cloudflare migration, custom endpoint preserved.');
+    {
+      const context=await browser.newContext({...devices['iPhone 13'],defaultBrowserType:undefined});
+      const requests=[];let rejectAccess=false;
+      await context.route('https://study.example/api/chat',async route=>{
+        requests.push(route.request().headers().authorization);
+        await route.fulfill({status:rejectAccess?401:200,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify(rejectAccess?{error:'学习口令不正确，请重新输入。'}:{reply:'¡Hola!'})});
+      });
+      let page=await context.newPage();
+      const openSettings=async()=>{await page.locator('#pet-toggle').click();await page.locator('#pet-settings').click();};
+      await page.goto(base+'#page=17');await openSettings();
+      assert(await page.locator('#ai-remember').isChecked());
+      await page.locator('#ai-access').fill('sk-'+'x'.repeat(25));await page.locator('#save-ai-settings').click();
+      assert.match(await page.locator('#ai-config-note').textContent(),/不是 Kimi API/);
+      assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-connection')),null);
+      await page.locator('#ai-endpoint').fill('https://study.example');
+      await page.locator('#ai-access').fill('test-only-study-access');await page.locator('#save-ai-settings').click();
+      await page.reload();await openSettings();
+      assert.equal(await page.locator('#ai-access').inputValue(),'test-only-study-access');
+      assert(await page.locator('#ai-remember').isChecked());
+      assert(await page.locator('.ai-remember').evaluate(e=>e.getBoundingClientRect().height>=44));
+      await page.screenshot({path:'test-results/remember-iphone.png'});
+      await page.close();page=await context.newPage();await page.goto(base+'#page=17');await page.locator('#pet-toggle').click();
+      assert.match(await page.locator('#pet-status').textContent(),/已记住此设备/);
+      await page.locator('#pet-input').fill('Hola');await page.locator('#pet-send').click();
+      await page.waitForFunction(()=>document.querySelector('#pet-status').textContent.includes('已连接'));
+      assert.deepEqual(requests,['Bearer test-only-study-access']);
+      await page.locator('#pet-settings').click();await page.locator('#ai-remember').uncheck();await page.locator('#save-ai-settings').click();
+      assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-connection')),null);
+      await page.reload();await openSettings();assert.equal(await page.locator('#ai-access').inputValue(),'');
+      await page.locator('#ai-access').fill('test-only-study-access');await page.locator('#save-ai-settings').click();
+      await page.locator('#pet-settings').click();await page.locator('#disconnect-ai').click();
+      assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-connection')),null);
+      assert.equal(await page.evaluate(()=>document.querySelector('#ai-access').value),'');
+      await page.reload();await openSettings();assert.equal(await page.locator('#ai-access').inputValue(),'');
+      await page.locator('#ai-endpoint').fill('https://study.example');await page.locator('#ai-access').fill('test-only-study-access');await page.locator('#save-ai-settings').click();
+      rejectAccess=true;await page.locator('#pet-input').fill('Hola');await page.locator('#pet-send').click();
+      await page.locator('#pet-error').waitFor();assert.match(await page.locator('#pet-error').textContent(),/口令不正确/);
+      assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-connection')),null);
+      await page.reload();await openSettings();assert.equal(await page.locator('#ai-access').inputValue(),'');
+      await context.close();
+      for(const scenario of ['blocked-storage','different-endpoint']){
+        const context=await browser.newContext();
+        await context.addInitScript(scenario=>{
+          if(scenario==='blocked-storage'){
+            const set=Storage.prototype.setItem;
+            Storage.prototype.setItem=function(key,value){if(key==='hola-ai-connection')throw new DOMException('Blocked','QuotaExceededError');return set.call(this,key,value);};
+          }else{
+            localStorage.setItem('hola-ai-endpoint','https://another.example');
+            localStorage.setItem('hola-ai-connection',JSON.stringify({endpoint:'https://study.example',access:'test-only-study-access'}));
+          }
+        },scenario);
+        const page=await context.newPage();await page.goto(base);await page.locator('#pet-toggle').click();await page.locator('#pet-settings').click();
+        assert.equal(await page.locator('#ai-access').inputValue(),'');
+        if(scenario==='blocked-storage'){
+          await page.locator('#ai-access').fill('test-only-study-access');await page.locator('#save-ai-settings').click();
+          assert.match(await page.locator('#pet-error').textContent(),/未能保存/);
+          assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-connection')),null);
+          assert.match(await page.locator('#pet-status').textContent(),/已配置/);
+        }
+        await context.close();
+      }
+      console.log('Remember-device checks passed: reload, reopen, authenticated request, opt-out, logout, invalid token, blocked storage and endpoint binding. Only dummy tokens used.');
+    }
     for(const [name,device] of [['desktop-short',{viewport:{width:1366,height:650}}],['iphone',devices['iPhone 13']],['iphone-small',{...devices['iPhone SE'],viewport:{width:320,height:568}}],['ipad',devices['iPad Pro 11']],['ipad-landscape',{viewport:{width:1194,height:834},isMobile:true,hasTouch:true,deviceScaleFactor:2}]]){
       const context=await browser.newContext({...device,defaultBrowserType:undefined});
       const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
-      await page.route('**/styles.css',route=>route.fulfill({contentType:'text/css',body:originalCSS}));
+      await page.route('**/styles.css*',route=>route.fulfill({contentType:'text/css',body:originalCSS}));
       await page.goto(base+'#page=17');await page.locator('.chapter-button').first().waitFor({state:'attached'});
       const before=await page.locator('#chapters').evaluate(e=>e.clientHeight);
-      await page.unroute('**/styles.css');await page.reload();await page.locator('.content-title').waitFor();
+      await page.unroute('**/styles.css*');await page.reload();await page.locator('.content-title').waitFor();
       const after=await page.locator('#chapters').evaluate(e=>e.clientHeight);assert(after>before+60,`${name}: ${before} -> ${after}`);
       assert(await page.locator('.nav-item').first().evaluate(e=>e.getBoundingClientRect().height>=44));
       if(await page.locator('#menu').isVisible())await page.locator('#menu').click();

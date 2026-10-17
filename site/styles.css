@@ -35,4 +35,5 @@
 .pet-panel.keyboard-open .pet-mini{height:36px}
 .pet-panel.keyboard-open .pet-voice-tools{padding-top:5px}
 .pet-error{max-height:105px;overflow-y:auto}
+.ai-remember{display:flex;align-items:center;gap:10px;min-height:44px;font-size:13px;cursor:pointer}.ai-remember input{width:20px;height:20px;flex:none;accent-color:var(--green)}
 @media(max-width:700px){.pet-panel{height:680px}.pet-voice-tools{padding-left:11px;padding-right:11px}.pet-voice-status{font-size:10px}.pet-voice-tools select{font-size:16px;width:44%;max-width:48%}.pet-voice-tools select option{font-size:16px}.pet-voice-tools button{padding-left:6px;padding-right:6px}.pet-panel.keyboard-open .pet-voice-tools{display:none}}
