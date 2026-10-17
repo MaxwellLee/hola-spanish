@@ -1,32 +1,132 @@
 import {escapeHTML as esc,spanishParts} from './core.js';
-import {say,getLearningContext} from './app.js';
+import {say,stopSpeech,getLearningContext} from './app.js';
+import {createSpeechDialogue} from './speech-dialogue.js';
+
 const character='<img src="assets/luna-v2.png" alt="" width="1024" height="1536">';
-const shell=document.createElement('div');shell.id='companion';shell.innerHTML=`<button id="pet-toggle" class="pet-toggle" aria-label="打开 Luna 西语学习伙伴" aria-expanded="false">${character}<span>和 Luna 练一句</span></button><section id="pet-panel" class="pet-panel" role="dialog" aria-label="Luna 西语学习伙伴" hidden><header class="pet-header"><div class="pet-mini">${character}</div><div><h2>Luna <span>你的西语练习伙伴</span></h2><small id="pet-status">AI 尚未连接</small></div><button id="pet-settings" class="icon-button" aria-label="连接设置">⚙</button><button id="pet-close" class="icon-button" aria-label="收起伙伴">×</button></header><div class="pet-modes"><button data-mode="chat" class="active">情景对话</button><button data-mode="explain">随文解释</button><button data-mode="correct">温和纠错</button><button data-mode="quiz">小挑战</button></div><div id="pet-messages" class="pet-messages" aria-live="polite"><div class="pet-message assistant"><p>¡Hola! 我是 Luna。<br>从一句简单的西班牙语开始吧。</p><small>连接 AI 后，我可以陪你对话、解释课文和改句子。还没连接时，教材点读和划词翻译照常可用。</small></div></div><div id="pet-error" class="pet-error" role="status" hidden></div><form id="pet-form"><textarea id="pet-input" rows="2" maxlength="1200" placeholder="例如：陪我练习用西语自我介绍" aria-label="给学习伙伴的消息"></textarea><div class="pet-compose-footer"><button type="button" id="pet-reset">新练习</button><span>可用键盘麦克风输入</span><button id="pet-send" type="submit">发送 ↗</button></div></form><div class="pet-note">AI 回答可能有误 · 仅发送当前页片段与本轮对话 · 不做发音评分</div></section>`;document.body.append(shell);
-const $=id=>document.getElementById(id);let mode='chat',messages=[],busy=false,controller;
-let endpoint='https://hola-study-companion.maxwelllee-hola.workers.dev';try{endpoint=localStorage.getItem('hola-ai-endpoint')||endpoint;}catch{}
+const shell=document.createElement('div');shell.id='companion';
+shell.innerHTML=`
+  <button id="pet-toggle" class="pet-toggle" aria-label="打开 Luna 西语学习伙伴" aria-expanded="false">${character}<span>和 Luna 练一句</span></button>
+  <section id="pet-panel" class="pet-panel" role="dialog" aria-label="Luna 西语学习伙伴" hidden>
+    <header class="pet-header"><div class="pet-mini">${character}</div><div><h2>Luna <span>你的西语练习伙伴</span></h2><small id="pet-status">AI 尚未连接</small></div><button id="pet-settings" class="icon-button" aria-label="连接设置">⚙</button><button id="pet-close" class="icon-button" aria-label="收起伙伴">×</button></header>
+    <div class="pet-modes"><button data-mode="chat" class="active">情景对话</button><button data-mode="explain">随文解释</button><button data-mode="correct">温和纠错</button><button data-mode="quiz">小挑战</button></div>
+    <div id="pet-messages" class="pet-messages" aria-live="polite"><div class="pet-message assistant"><p>¡Hola! 我是 Luna。<br>从一句简单的西班牙语开始吧。</p><small>连接 AI 后，可以打字，也可以点「语音对话」。说一句，我会回复并朗读西语，再听你继续说。</small></div></div>
+    <div id="pet-error" class="pet-error" role="status" hidden></div>
+    <div class="pet-voice-tools"><button id="pet-voice" type="button" aria-pressed="false"><span aria-hidden="true">🎙</span> 语音对话</button><label for="pet-language" class="sr-only">我说的语言</label><select id="pet-language" aria-label="我说的语言"><option value="es-ES">西班牙语</option><option value="zh-CN">中文</option></select><button id="pet-finish" type="button" hidden>说完了</button></div>
+    <div id="pet-voice-status" class="pet-voice-status" role="status">点击后允许麦克风；语音由浏览器语音服务转写。</div>
+    <form id="pet-form"><textarea id="pet-input" rows="2" maxlength="1200" placeholder="例如：陪我练习用西语自我介绍" aria-label="给学习伙伴的消息"></textarea><div class="pet-compose-footer"><button type="button" id="pet-reset">新练习</button><span>也可用键盘麦克风输入</span><button id="pet-send" type="submit">发送 ↗</button></div></form>
+    <div class="pet-note">AI 回答可能有误 · 仅发送当前页片段与对话文字 · 不做发音评分</div>
+  </section>`;
+document.body.append(shell);
+const $=id=>document.getElementById(id);
+let mode='chat',messages=[],busy=false,controller,voiceRequest=false;
+let endpoint='https://hola-study-companion.maxwelllee-hola.workers.dev';
+try{endpoint=localStorage.getItem('hola-ai-endpoint')||endpoint;}catch{}
 let access='';
 const prompts={chat:'请陪我练习西班牙语自我介绍。我是零基础，请每次只问一句，必要时给中文提示。',explain:'请用简单中文解释当前页最值得掌握的一个西班牙语句型，并给我一个替换练习。',correct:'请帮我改下面这句西班牙语：',quiz:'请根据当前页出一道适合零基础的题，等我回答后再解释答案。'};
-function status(){ $('pet-status').textContent=endpoint&&access?'已配置 · 发送后验证连接':'AI 尚未连接';}
-function open(){ $('pet-panel').hidden=false;$('pet-toggle').hidden=true;$('pet-toggle').setAttribute('aria-expanded','true');status(); }
-function close(){ $('pet-panel').hidden=true;$('pet-toggle').hidden=false;$('pet-toggle').setAttribute('aria-expanded','false');$('pet-toggle').focus(); }
-function setMode(next){mode=next;messages=[];$('pet-messages').innerHTML=`<div class="pet-message assistant"><p>${next==='chat'?'今天想在哪里说西语？咖啡店、旅途中，还是第一次见面？':next==='explain'?'我们一次只弄懂一个句子。也可以在教材里选一句，再点「问问 Luna」。':next==='correct'?'写一句你想说的话。我会先帮你表达清楚，再解释一个最关键的改动。':'来做一道小题，先试着回答，再看解释。'}</p><small>练习提示 · AI 回答将在发送后生成</small></div>`;$('pet-input').value=prompts[next];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===next));$('pet-error').hidden=true;}
-function addMessage(role,text){const element=document.createElement('div');element.className=`pet-message ${role}`;const p=document.createElement('p');p.textContent=text;element.append(p);if(role==='assistant'){const listen=document.createElement('button');listen.className='text-button';listen.textContent='▷ 听西语部分';listen.onclick=()=>say(spanishParts(text).join(' '));element.append(listen);}$('pet-messages').append(element);element.scrollIntoView({block:'nearest'});}
+const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+const voice=createSpeechDialogue({
+  Recognition,language:()=>$('pet-language').value,
+  onTranscript:text=>{$('pet-input').value=text;},
+  onTurn:text=>send(text,true),
+  speak:reply=>{const text=spanishParts(reply).join(' ');return text?say(text):Promise.resolve(false);},
+  cancelSpeech:stopSpeech,
+  onState:phase=>{
+    const active=phase!=='idle';
+    $('pet-voice').textContent=active?'■ 结束语音':'🎙 语音对话';
+    $('pet-voice').setAttribute('aria-pressed',String(active));
+    $('pet-voice').classList.toggle('listening',['starting','listening'].includes(phase));
+    $('pet-language').disabled=active||busy||!Recognition;
+    $('pet-finish').hidden=phase!=='listening';
+    $('pet-input').readOnly=active;
+    $('pet-send').disabled=active||busy;
+    $('pet-voice-status').textContent={idle:Recognition?'语音已停止。可以打字，或重新开始语音对话。':'此浏览器暂不支持语音对话，可使用键盘麦克风输入。',starting:'正在打开麦克风…',listening:'正在听 · 说一句，停顿后自动发送',thinking:'已听到 · Luna 正在想…',speaking:'Luna 正在回答 · 读完后继续听你说'}[phase];
+  },
+  onError:showError,
+  onStop:()=>{if(voiceRequest)controller?.abort();}
+});
+if(!Recognition){$('pet-voice').disabled=true;$('pet-language').disabled=true;$('pet-voice-status').textContent='此浏览器暂不支持语音对话。可用 Safari、Edge 或 Chrome，或用键盘麦克风输入。';}
+function showError(message){$('pet-error').hidden=false;$('pet-error').textContent=message;}
+function status(){$('pet-status').textContent=endpoint&&access?'已配置 · 发送后验证连接':'AI 尚未连接';}
+function open(){$('pet-panel').hidden=false;$('pet-toggle').hidden=true;$('pet-toggle').setAttribute('aria-expanded','true');status();}
+function close(){voice.stop();$('pet-panel').hidden=true;$('pet-toggle').hidden=false;$('pet-toggle').setAttribute('aria-expanded','false');$('pet-toggle').focus();}
+function connected(){
+  if(endpoint&&access)return true;
+  showError('Luna 还未连接 AI。请先点右上角齿轮，填入你的学习口令；这里不接收 Kimi API 密钥。');return false;
+}
+function setMode(next){
+  voice.stop();mode=next;messages=[];
+  const greeting={chat:'今天想在哪里说西语？咖啡店、旅途中，还是第一次见面？',explain:'我们一次只弄懂一个句子。也可以在教材里选一句，再点「问问 Luna」。',correct:'写一句你想说的话。我会先帮你表达清楚，再解释一个最关键的改动。',quiz:'来做一道小题，先试着回答，再看解释。'}[next];
+  $('pet-messages').innerHTML=`<div class="pet-message assistant"><p>${greeting}</p><small>练习提示 · AI 回答将在发送后生成</small></div>`;
+  $('pet-input').value=prompts[next];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===next));$('pet-error').hidden=true;
+}
+function addMessage(role,text){
+  const element=document.createElement('div');element.className=`pet-message ${role}`;
+  const p=document.createElement('p');p.textContent=text;element.append(p);
+  if(role==='assistant'){
+    const listen=document.createElement('button');listen.className='text-button';listen.textContent='▷ 听西语部分';
+    listen.onclick=()=>{voice.stop();say(spanishParts(text).join(' '));};element.append(listen);
+  }
+  $('pet-messages').append(element);$('pet-messages').scrollTop=$('pet-messages').scrollHeight;
+}
 function settings(){
-  const dlg=$('modal');$('modal-title').textContent='连接 Luna';$('modal-body').innerHTML=`<p>这里填写已部署的后端地址和学习口令。<b>不要填写 Kimi API 密钥。</b>密钥只保存在后端托管平台的加密配置中。</p><label class="ai-field">后端地址<input id="ai-endpoint" type="url" placeholder="https://你的服务.workers.dev" value="${esc(endpoint)}" autocomplete="off"></label><label class="ai-field">学习口令<input id="ai-access" type="password" placeholder="你为这个后端设置的学习口令" autocomplete="off"></label><p class="tiny">口令只在当前页面内存中使用，刷新后需重新输入。对话只保留在当前页面；后端用量计数会持久保存，避免超过每日上限。</p><div class="review-toolbar"><button class="primary-button" id="save-ai-settings">保存连接设置</button><button class="quiet-button" id="disconnect-ai">断开连接</button></div><p id="ai-config-note" class="tiny">还没有后端时，可先使用教材里的点读、翻译和生词复习。</p>`;if(!dlg.open)dlg.showModal();
-  $('save-ai-settings').onclick=()=>{try{const url=new URL($('ai-endpoint').value.trim());if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname))throw Error();if($('ai-access').value.length<16){$('ai-config-note').textContent='请输入至少 16 位的学习口令（不是 Kimi 密钥）。';return;}endpoint=url.origin;access=$('ai-access').value;try{localStorage.setItem('hola-ai-endpoint',endpoint);}catch{}status();dlg.close();}catch{$('ai-config-note').textContent='请输入完整的 HTTPS 服务地址，不带路径、参数或密钥。';}};
-  $('disconnect-ai').onclick=()=>{controller?.abort();access='';endpoint='';messages=[];try{localStorage.removeItem('hola-ai-endpoint');}catch{}status();dlg.close();};
+  voice.stop();const dlg=$('modal');$('modal-title').textContent='连接 Luna';
+  $('modal-body').innerHTML=`<p>后端地址已填好，只需输入你们的学习口令。<b>不要填写 Kimi API 密钥。</b></p><label class="ai-field">后端地址<input id="ai-endpoint" type="url" value="${esc(endpoint)}" autocomplete="off"></label><label class="ai-field">学习口令<input id="ai-access" type="password" placeholder="独立学习口令，至少 16 位" autocomplete="off"></label><p class="tiny">口令只在当前页面内存中使用，刷新后需重新输入。对话只保留在当前页面。</p><div class="review-toolbar"><button class="primary-button" id="save-ai-settings">保存连接设置</button><button class="quiet-button" id="disconnect-ai">断开连接</button></div><p id="ai-config-note" class="tiny">尚未连接 AI 时，仍可使用教材点读、翻译和生词复习。</p>`;
+  if(!dlg.open)dlg.showModal();
+  $('save-ai-settings').onclick=()=>{
+    try{
+      const url=new URL($('ai-endpoint').value.trim());
+      if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname))throw Error();
+      const nextAccess=$('ai-access').value.trim();
+      if(nextAccess.length<16||nextAccess.length>128){$('ai-config-note').textContent='请输入 16–128 位的学习口令（不是 Kimi 密钥）。';return;}
+      endpoint=url.origin;access=nextAccess;try{localStorage.setItem('hola-ai-endpoint',endpoint);}catch{}
+      status();dlg.close();
+    }catch{$('ai-config-note').textContent='请输入完整的 HTTPS 服务地址，不带路径、参数或密钥。';}
+  };
+  $('disconnect-ai').onclick=()=>{controller?.abort();access='';messages=[];try{localStorage.removeItem('hola-ai-endpoint');}catch{}status();dlg.close();};
+}
+async function send(text,spoken=false){
+  text=text.trim();if(busy||!text||!connected())return null;
+  busy=true;voiceRequest=spoken;$('pet-send').disabled=true;$('pet-input').disabled=true;
+  $('pet-voice').disabled=!Recognition||(!spoken&&busy);$('pet-language').disabled=true;
+  $('pet-error').hidden=true;$('pet-status').textContent='Luna 正在想…';addMessage('user',text);
+  const history=[...messages,{role:'user',content:text}].slice(-12);
+  const requestController=new AbortController();controller=requestController;
+  const timer=setTimeout(()=>requestController.abort(),45000);
+  try{
+    const response=await fetch(`${endpoint}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${access}`},body:JSON.stringify({mode,messages:history,context:getLearningContext()}),signal:requestController.signal,referrerPolicy:'no-referrer'});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||'连接暂时不可用，请稍后重试。');
+    if(typeof data.reply!=='string'||!data.reply.trim())throw Error('没有收到有效回复，请重试。');
+    if(requestController.signal.aborted)return null;
+    messages=[...history,{role:'assistant',content:data.reply}];addMessage('assistant',data.reply);$('pet-input').value='';$('pet-status').textContent='已连接 · 一次练好一句';
+    return data.reply;
+  }catch(error){
+    if(error.name==='AbortError'&&spoken&&!voice.active)return null;
+    showError(error.name==='AbortError'?'请求已取消或等待超时，请重试。':error instanceof TypeError?'网络暂时连接不上，请检查网络后重试。':error.message);
+    $('pet-status').textContent='本次请求未成功';return null;
+  }finally{
+    clearTimeout(timer);busy=false;voiceRequest=false;$('pet-send').disabled=voice.active;$('pet-input').disabled=false;
+    $('pet-voice').disabled=!Recognition;$('pet-language').disabled=!Recognition||voice.active;
+  }
 }
 $('pet-toggle').onclick=open;$('pet-close').onclick=close;$('pet-settings').onclick=settings;
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{if(!busy)setMode(b.dataset.mode);});
-$('pet-reset').onclick=()=>{controller?.abort();messages=[];setMode(mode);};
-$('pet-form').onsubmit=async e=>{
-  e.preventDefault();if(busy)return;const text=$('pet-input').value.trim();if(!text)return;
-  if(!endpoint||!access){$('pet-error').hidden=false;$('pet-error').textContent='Luna 还未连接 AI。请先在右上角设置后端地址和学习口令；这里不接收 Kimi API 密钥。';return;}
-  busy=true;$('pet-send').disabled=true;$('pet-input').disabled=true;$('pet-error').hidden=true;$('pet-status').textContent='Luna 正在想…';addMessage('user',text);const history=[...messages,{role:'user',content:text}].slice(-12);controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
-  try{const response=await fetch(`${endpoint}/api/chat`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${access}`},body:JSON.stringify({mode,messages:history,context:getLearningContext()}),signal:controller.signal,referrerPolicy:'no-referrer'});const data=await response.json();if(!response.ok)throw Error(data.error||'连接暂时不可用，请稍后重试。');if(typeof data.reply!=='string'||!data.reply.trim())throw Error('没有收到有效回复，请重试。');messages=[...history,{role:'assistant',content:data.reply}];addMessage('assistant',data.reply);$('pet-input').value='';$('pet-status').textContent='已连接 · 一次练好一句';}
-  catch(error){$('pet-error').hidden=false;$('pet-error').textContent=error.name==='AbortError'?'请求已取消或等待超时，请重试。':error.message;$('pet-status').textContent='本次请求未成功';}
-  finally{clearTimeout(timer);busy=false;$('pet-send').disabled=false;$('pet-input').disabled=false;}
+$('pet-reset').onclick=()=>{controller?.abort();setMode(mode);};
+$('pet-form').onsubmit=e=>{e.preventDefault();if(!voice.active)send($('pet-input').value);};
+$('pet-voice').onclick=()=>{
+  if(voice.active){voice.stop();return;}
+  if(busy||!connected())return;
+  $('pet-error').hidden=true;$('pet-input').value='';voice.start();
 };
+$('pet-finish').onclick=()=>voice.finish();
 window.addEventListener('hola:explain',e=>{open();if(busy)return;setMode('explain');$('pet-input').value=`请解释这句西班牙语的意思和用法：${String(e.detail).slice(0,500)}`;$('pet-input').focus();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('modal').open&&!$('pet-panel').hidden)close();});
-window.visualViewport?.addEventListener('resize',()=>{$('pet-panel').style.maxHeight=`${Math.max(240,window.visualViewport.height-30)}px`;});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)voice.stop();});
+window.addEventListener('pagehide',()=>voice.stop());
+document.addEventListener('click',e=>{if(voice.active&&e.target.closest('[data-speak],[data-say],#say-selection,#listen-page,#voice-preview,#mobile-listen,#stop-audio'))voice.stop();},true);
+window.visualViewport?.addEventListener('resize',()=>{
+  const viewport=window.visualViewport,compact=innerWidth<=700;
+  $('pet-panel').classList.toggle('keyboard-open',viewport.height<540);
+  $('pet-panel').style.bottom=`${Math.max(0,innerHeight-viewport.height-viewport.offsetTop)+(compact?76:23)}px`;
+  $('pet-panel').style.maxHeight=`${Math.max(180,viewport.height-(compact?100:40))}px`;
+});

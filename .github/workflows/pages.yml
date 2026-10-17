@@ -23,6 +23,7 @@ jobs:
           node-version: '22'
       - run: node tools/check-core.mjs
       - run: node tools/check-backend.mjs
+      - run: node tools/check-speech.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

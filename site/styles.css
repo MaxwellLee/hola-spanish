@@ -8,3 +8,31 @@
 @media(max-width:700px){.pet-toggle{bottom:calc(79px + env(safe-area-inset-bottom));right:12px}.pet-toggle>svg{width:54px;height:61px}.pet-toggle>span{display:none}.pet-panel{right:9px;left:9px;bottom:calc(76px + env(safe-area-inset-bottom));width:auto;height:590px;max-height:calc(100dvh - 100px);border-radius:14px}.pet-header{padding:11px}.pet-header .icon-button{width:40px;height:40px}.pet-modes button{font-size:11px;min-height:40px}.pet-message p{font-size:15px}.pet-message small{font-size:11px}.pet-panel textarea{font-size:16px;min-height:70px}.pet-compose-footer>#pet-send{min-height:40px;font-size:12px}.pet-compose-footer>button{font-size:11px;min-height:40px}.pet-compose-footer>span{font-size:9px}.pet-note{font-size:9px}.pet-error{font-size:12px}.popover-actions{gap:5px}.popover-actions button{font-size:11px;padding:8px}.ai-field input{font-size:16px}}
 .pet-toggle>img{width:90px;height:135px;object-fit:contain}.pet-mini{width:46px;height:52px;overflow:hidden;border-radius:50%;background:#f8e9e7}.pet-mini>img{width:64px;height:96px;object-fit:contain;max-width:none;transform:translate(-9px,-1px)}.pet-panel textarea{font-family:inherit;line-height:1.65}.pet-toggle>span{margin-bottom:35px}
 @media(max-width:700px){.pet-toggle>img{width:58px;height:87px}.pet-mini>img{width:64px;height:96px}}
+
+/* Give the lesson list the remaining viewport, with compact but tappable navigation. */
+.sidebar{height:100dvh;padding-top:20px;padding-bottom:max(14px,env(safe-area-inset-bottom))}
+.sidebar>.brand,.sidebar-label,.main-nav,.course-heading,.search-box,.sidebar-footer{flex-shrink:0}
+.brand{margin-bottom:17px;font-size:34px}.brand-mark{width:39px;height:41px;font-size:38px}
+.sidebar-label{margin-bottom:7px}.main-nav{gap:2px;margin-bottom:14px}
+.nav-item{min-height:44px;padding:7px 10px;font-size:12px;gap:10px}
+.course-heading{margin-bottom:8px}.search-box{margin-bottom:9px;min-height:42px}
+.search-box input{padding:8px 0}.chapters{min-height:0;overscroll-behavior:contain}
+.chapter-button{min-height:55px;padding:9px 10px}.sidebar-footer{padding-top:12px}
+@media(max-height:760px){.sidebar{padding-top:12px}.brand{margin-bottom:12px}.sidebar-label,.sidebar-footer{display:none}.main-nav{margin-bottom:10px}}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.pet-panel{height:680px}.pet-messages{min-height:0}
+.pet-header,.pet-modes,.pet-voice-tools,.pet-voice-status,.pet-panel form,.pet-note,.pet-error{flex-shrink:0}
+.pet-voice-tools{display:flex;align-items:center;gap:6px;padding:10px 14px 0;border-top:1px solid var(--line)}
+.pet-voice-tools button,.pet-voice-tools select{min-height:44px;border:1px solid #d8dfc8;border-radius:6px;padding:7px 8px;font-size:11px;background:#f4f6ec;white-space:nowrap}
+#pet-voice{flex:1;color:var(--green);font-weight:600}#pet-voice[aria-pressed=true]{background:#eee0d7;color:#a34b35;border-color:#d8b8a5}
+#pet-voice.listening{box-shadow:inset 0 0 0 2px #bb77563d}
+#pet-language{min-width:0;max-width:46%;flex:1}#pet-finish{flex:none}
+.pet-voice-status{font-size:10px;line-height:1.6;color:#7c846f;padding:6px 15px 9px}
+.pet-panel.keyboard-open .pet-modes,.pet-panel.keyboard-open .pet-note,.pet-panel.keyboard-open .pet-voice-status{display:none}
+.pet-panel.keyboard-open .pet-header{padding:5px 10px}.pet-panel.keyboard-open form{padding-top:7px}
+.pet-panel.keyboard-open textarea{min-height:48px;height:48px}
+.pet-panel.keyboard-open .pet-mini{height:36px}
+.pet-panel.keyboard-open .pet-voice-tools{padding-top:5px}
+.pet-error{max-height:105px;overflow-y:auto}
+@media(max-width:700px){.pet-panel{height:680px}.pet-voice-tools{padding-left:11px;padding-right:11px}.pet-voice-status{font-size:10px}.pet-voice-tools select{font-size:16px;width:44%;max-width:48%}.pet-voice-tools select option{font-size:16px}.pet-voice-tools button{padding-left:6px;padding-right:6px}.pet-panel.keyboard-open .pet-voice-tools{display:none}}

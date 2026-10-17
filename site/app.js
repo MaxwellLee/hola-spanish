@@ -181,5 +181,5 @@ async function init(){
   catch{$('page-content').innerHTML='<div class="error-box">教材加载失败。请检查网络后刷新页面。</div>';}
 }
 init();
-export {say};
+export {say,stopSpeech};
 export function getLearningContext(){return {page:state.page,chapter:manifest?chapterFor(state.page).title:'',text:(pageData?.readingLines||pageData?.lines||[]).map(l=>l.text).join('\n').slice(0,2400)};}

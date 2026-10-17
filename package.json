@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tools/check-core.mjs && node tools/check-backend.mjs",
+    "test": "node tools/check-core.mjs && node tools/check-backend.mjs && node tools/check-speech.mjs",
     "test:ui": "node tools/check-ui.cjs"
   },
   "devDependencies": {

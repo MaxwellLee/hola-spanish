@@ -15,4 +15,19 @@ saved.count=0;saved.last=Date.now();assert.equal((await quota.fetch(new Request(
 env.STUDY_QUOTA={idFromName:()=>'',get:()=>({fetch:async()=>new Response(JSON.stringify({reply:'Hola'}),{status:200})})};
 const result=await worker.fetch(request('https://example.com','test-only-study-access'),env);
 assert.equal(result.status,200);assert.equal(result.headers.get('Access-Control-Allow-Origin'),'https://example.com');assert.equal(result.headers.get('Cache-Control'),'no-store');
+const realFetch=globalThis.fetch;
+try{
+  globalThis.fetch=async()=>new Response('upstream error details must stay private',{status:401});
+  saved.count=0;saved.last=0;
+  const rejected=await new StudyQuota(state,env).fetch(new Request('https://internal/chat',{method:'POST',body:JSON.stringify(data)}));
+  assert.equal(rejected.status,502);const message=await rejected.text();assert.match(message,/密钥未通过认证/);assert(!message.includes('upstream error details'));
+  globalThis.fetch=async(url,init)=>{
+    assert.equal(url,'https://api.kimi.com/coding/v1/chat/completions');assert.equal(init.headers['User-Agent'],'HolaSpanishStudy/1.0');
+    const payload=JSON.parse(init.body);assert.equal(payload.model,'kimi-for-coding');assert.equal(payload.reasoning_effort,'low');assert.equal(payload.thinking,undefined);assert.equal(payload.max_tokens,1800);
+    return new Response(JSON.stringify({choices:[{message:{content:'¡Hola!'},finish_reason:'stop'}]}));
+  };
+  saved.count=0;saved.last=0;
+  const memberReply=await new StudyQuota(state,{...env,MOONSHOT_BASE_URL:'https://api.kimi.com/coding/v1',KIMI_MODEL:'kimi-for-coding'}).fetch(new Request('https://internal/chat',{method:'POST',body:JSON.stringify(data)}));
+  assert.equal(memberReply.status,200);assert.equal((await memberReply.json()).reply,'¡Hola!');
+}finally{globalThis.fetch=realFetch;}
 console.log('Backend checks passed: input validation, origin restriction, access token, daily quota, short interval, response CORS. Upstream Kimi NOT called.');
