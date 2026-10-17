@@ -1,8 +1,12 @@
 # Luna 后端接入
 
-腾讯云国内部署使用独立上传包，见 [腾讯云 SCF 部署说明](TENCENT.md)。目前尚未切换网站默认后端，以下记录的是已有 Cloudflare 部署。
+当前默认后端是腾讯云广州 SCF：`https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com`。2026-10-17 已验证无需系统代理即可完成一次真实 Kimi Code 会员对话。配置、测试与计数边界见 [腾讯云 SCF 部署说明](TENCENT.md)。
 
-网页本身无需密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 后端已部署到 `https://hola-study-companion.maxwelllee-hola.workers.dev`，学习网页已预填此地址。当前选择 Kimi Code 会员接口，密钥和独立学习口令保存在 Cloudflare Secret。
+网页本身无需 Kimi 密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 使用独立学习口令。当前会员密钥和口令配置在腾讯云环境变量中。
+
+## 保留的 Cloudflare 部署
+
+以下步骤只针对仍保留的 `https://hola-study-companion.maxwelllee-hola.workers.dev`，网页不会自动回退到此地址。该部署的密钥和口令保存在 Cloudflare Secret。
 
 已有部署请从下面第 3 步开始；第 1–2 步供重新部署时参考。
 
@@ -17,12 +21,12 @@
    - `STUDY_ACCESS_TOKEN`：自行生成的至少 16 位随机学习口令，供你们使用网页时连接。它与 Kimi 密钥不同，不要重复使用其他账号的密码。
    添加后点击 **Deploy** 使配置生效。
 4. 核对普通配置：`KIMI_MODEL` 必须与当前服务和账户权限匹配。当前会员方案使用 `https://api.kimi.ai/coding/v1` 和 `kimi-for-coding`。若手动改用开放平台，中国站使用 `https://api.moonshot.cn/v1`，国际站使用 `https://api.moonshot.ai/v1`，同时更换密钥及对应模型；两站账号与密钥不可假定互通。
-5. 在网页右下角打开 Luna → 齿轮，保留已预填的后端地址，填写学习口令。自行重新部署时才需要替换成新服务的 HTTPS 根地址。**网页中不填写 Kimi 密钥。**
+5. 若明确需要改回 Cloudflare，在网页右下角打开 Luna → 齿轮，把后端地址改为该 Worker 的 HTTPS 根地址，填写学习口令。当前默认地址是腾讯云。**网页中不填写 Kimi 密钥。**
 6. 发送一句简短测试，例如“陪我练习自我介绍”，确认真实响应、费用和模型效果后再常态使用。
 
 `ALLOWED_ORIGIN` 填网页的源（例如 `https://maxwelllee.github.io`，不含仓库路径）。在其他域名部署时必须修改。仅限制来源不能替代认证，因此每次 AI 请求同时验证学习口令。
 
-## 用量与数据边界
+## Cloudflare 用量与数据边界
 
 - 默认全家合计每天最多 100 次 AI 请求，按北京时间午夜重置；至少间隔 5 秒。上限由 Durable Object 事务持久维护，Worker 重启不会重置。
 - 上游失败也计为一次尝试，以保守限制调用量；这个请求次数上限不等于人民币预算。请同时在 Kimi 平台核对账户额度、用量与模型价格。

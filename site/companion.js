@@ -19,8 +19,12 @@ shell.innerHTML=`
 document.body.append(shell);
 const $=id=>document.getElementById(id);
 let mode='chat',messages=[],busy=false,controller,voiceRequest=false;
-let endpoint='https://hola-study-companion.maxwelllee-hola.workers.dev';
-try{endpoint=localStorage.getItem('hola-ai-endpoint')||endpoint;}catch{}
+let endpoint='https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com';
+try{
+  const saved=localStorage.getItem('hola-ai-endpoint');
+  if(saved==='https://hola-study-companion.maxwelllee-hola.workers.dev')localStorage.setItem('hola-ai-endpoint',endpoint);
+  else if(saved)endpoint=saved;
+}catch{}
 let access='';
 const prompts={chat:'请陪我练习西班牙语自我介绍。我是零基础，请每次只问一句，必要时给中文提示。',explain:'请用简单中文解释当前页最值得掌握的一个西班牙语句型，并给我一个替换练习。',correct:'请帮我改下面这句西班牙语：',quiz:'请根据当前页出一道适合零基础的题，等我回答后再解释答案。'};
 const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;

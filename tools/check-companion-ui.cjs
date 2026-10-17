@@ -16,6 +16,17 @@ const originalCSS=execFileSync('git',['show','e00a9df:site/styles.css'],{encodin
   }
   const browser=await chromium.launch({channel:'chrome',headless:true});
   try{
+    const currentEndpoint='https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com';
+    for(const [saved,expected] of [[null,currentEndpoint],['https://hola-study-companion.maxwelllee-hola.workers.dev',currentEndpoint],['https://study.example','https://study.example']]){
+      const context=await browser.newContext();
+      if(saved)await context.addInitScript(value=>localStorage.setItem('hola-ai-endpoint',value),saved);
+      const page=await context.newPage();await page.goto(base+'#page=17');
+      await page.locator('#pet-toggle').click();await page.locator('#pet-settings').click();
+      assert.equal(await page.locator('#ai-endpoint').inputValue(),expected);
+      if(saved)assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-endpoint')),expected);
+      await context.close();
+    }
+    console.log('Connection settings passed: Tencent default, old Cloudflare migration, custom endpoint preserved.');
     for(const [name,device] of [['desktop-short',{viewport:{width:1366,height:650}}],['iphone',devices['iPhone 13']],['iphone-small',{...devices['iPhone SE'],viewport:{width:320,height:568}}],['ipad',devices['iPad Pro 11']],['ipad-landscape',{viewport:{width:1194,height:834},isMobile:true,hasTouch:true,deviceScaleFactor:2}]]){
       const context=await browser.newContext({...device,defaultBrowserType:undefined});
       const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
