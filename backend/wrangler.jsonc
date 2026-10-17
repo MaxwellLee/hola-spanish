@@ -4,7 +4,7 @@
   "compatibility_date": "2026-10-16",
   "vars": {
     "ALLOWED_ORIGIN": "https://maxwelllee.github.io",
-    "MOONSHOT_BASE_URL": "https://api.kimi.com/coding/v1",
+    "MOONSHOT_BASE_URL": "https://api.kimi.ai/coding/v1",
     "KIMI_MODEL": "kimi-for-coding",
     "DAILY_REQUEST_LIMIT": "100"
   },

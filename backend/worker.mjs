@@ -58,7 +58,12 @@ export class StudyQuota {
     try{
       const response=await fetch(`${base}/chat/completions`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${this.env.MOONSHOT_API_KEY}`,'User-Agent':'HolaSpanishStudy/1.0'},body:JSON.stringify(payload),signal:AbortSignal.timeout(35000)});
       if(response.status===401)return json({error:'Kimi 密钥未通过认证。请检查密钥所属平台、区域与后端服务地址是否一致。'},502);
-      if(!response.ok)return json({error:'AI 服务暂不可用，请检查后端的模型权限、余额和密钥配置。'},502);
+      if(!response.ok){
+        const detail=await response.json().catch(()=>({}));
+        const code=String(detail.error?.type||detail.error?.code||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
+        const message=response.status===429?'AI 额度或请求频率达到限制，请稍后重试，并检查当前套餐用量。':response.status===403?'AI 服务拒绝了当前后端的访问，请检查套餐权限或服务端访问限制。':'AI 服务暂不可用，请检查后端的模型权限、余额和密钥配置。';
+        return json({error:message,upstreamStatus:response.status,upstreamCode:code},502);
+      }
       const result=await response.json();const reply=result.choices?.[0]?.message?.content;
       if(typeof reply!=='string'||!reply.trim())return json({error:'AI 未返回有效回答，请重试。'},502);
       return json({reply:reply+(result.choices?.[0]?.finish_reason==='length'?'\n（已达到本次回复长度上限，可以继续询问。）':''),source:'kimi'});

@@ -4,7 +4,7 @@
 
 已有部署请从下面第 3 步开始；第 1–2 步供重新部署时参考。
 
-注意密钥的产品类型：Kimi Code 与开放平台使用不同地址、模型名和额度。当前 `MOONSHOT_BASE_URL=https://api.kimi.com/coding/v1`、`KIMI_MODEL=kimi-for-coding`，`MOONSHOT_API_KEY` 保存会员接口密钥。请求如实标识为 `HolaSpanishStudy/1.0`。会员额度不足或服务拒绝时显示错误，不自动改用按量付费。参见 [Kimi Code 接入说明](https://www.kimi.com/code/docs/) 与 [产品和密钥区别](https://www.kimi.com/help/kimi-api/api-troubleshooting)。
+注意密钥的产品类型：Kimi Code 与开放平台使用不同地址、模型名和额度。当前 Cloudflare 后端使用官方海外会员地址 `MOONSHOT_BASE_URL=https://api.kimi.ai/coding/v1`、`KIMI_MODEL=kimi-for-coding`，`MOONSHOT_API_KEY` 保存会员接口密钥。请求如实标识为 `HolaSpanishStudy/1.0`。2026-10-17 实测此路径可返回真实回复；国内会员地址在本机可用，但从该 Cloudflare 后端访问返回 403。会员额度不足或服务拒绝时显示错误，不自动改用按量付费。参见 [Kimi Code 接入说明](https://www.kimi.com/code/docs/) 与 [产品和密钥区别](https://www.kimi.com/help/kimi-api/api-troubleshooting)。
 
 ## 首次配置
 
@@ -14,7 +14,7 @@
    - `MOONSHOT_API_KEY`：你的 Kimi API 密钥，仅在该加密配置框中输入。
    - `STUDY_ACCESS_TOKEN`：自行生成的至少 16 位随机学习口令，供你们使用网页时连接。它与 Kimi 密钥不同，不要重复使用其他账号的密码。
    添加后点击 **Deploy** 使配置生效。
-4. 核对普通配置：`KIMI_MODEL` 必须与当前服务和账户权限匹配。会员方案使用 `https://api.kimi.com/coding/v1` 和 `kimi-for-coding`。若手动改用开放平台，中国站使用 `https://api.moonshot.cn/v1`，国际站使用 `https://api.moonshot.ai/v1`，同时更换密钥及对应模型；两站账号与密钥不可假定互通。
+4. 核对普通配置：`KIMI_MODEL` 必须与当前服务和账户权限匹配。当前会员方案使用 `https://api.kimi.ai/coding/v1` 和 `kimi-for-coding`。若手动改用开放平台，中国站使用 `https://api.moonshot.cn/v1`，国际站使用 `https://api.moonshot.ai/v1`，同时更换密钥及对应模型；两站账号与密钥不可假定互通。
 5. 在网页右下角打开 Luna → 齿轮，保留已预填的后端地址，填写学习口令。自行重新部署时才需要替换成新服务的 HTTPS 根地址。**网页中不填写 Kimi 密钥。**
 6. 发送一句简短测试，例如“陪我练习自我介绍”，确认真实响应、费用和模型效果后再常态使用。
 
