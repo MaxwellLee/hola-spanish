@@ -9,7 +9,7 @@ for (const key of ['read','days','words']) if(!Array.isArray(state[key])) state[
 if(!state.tasks || typeof state.tasks!=='object') state.tasks={};
 state.words = state.words.filter(w=>w && typeof w.text==='string' && typeof w.meaning==='string');
 state.size = Math.max(15,Math.min(28,Number(state.size)||19));
-state.speed = Math.max(.5,Math.min(1.2,Number(state.speed)||.85));
+state.speed = Math.max(.1,Math.min(1.2,Number(state.speed)||.85));
 if(!['text','scan','compare'].includes(state.view))state.view='text';
 let manifest, glossary = {}, pageData, voices = [], renderId = 0, speechId = 0, utterance, selection = '', selectionMeaning = '', selectionVersion = 0, searchIndex, toastTimer, selectionTimer, searchTimer;
 const cache = new Map();

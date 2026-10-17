@@ -6,7 +6,7 @@
   <meta name="description" content="现代西班牙语第一册的随身学习空间：全书阅读、点读、划词翻译与生词复习。">
   <title>Hola · 慢慢学西语</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css?v=remember-20261017">
-  <script type="module" src="app.js"></script><script type="module" src="companion.js?v=remember-20261017"></script>
+  <script type="module" src="app.js?v=speed-20261017"></script><script type="module" src="companion.js?v=speed-20261017"></script>
 </head>
 <body>
   <a href="#reader" class="skip-link">跳到教材</a>
@@ -33,7 +33,7 @@
           <div class="reader-bottom"><span id="page-caption">现代西班牙语 · 学生用书 1</span><button class="quiet-button" id="next-bottom">继续下一页 →</button></div>
         </section>
         <aside class="learning-rail">
-          <section class="audio-card"><div class="card-kicker">ESCUCHA Y REPITE</div><div class="card-title"><h3>让耳朵先熟悉它</h3><span class="headphones">♫</span></div><p>听一句，再轻轻跟读一句。</p><label class="field-label" for="voice">朗读声音</label><select id="voice"><option>正在寻找西语声音…</option></select><div class="voice-help" id="voice-info"></div><div class="speed-row"><label for="speed">语速 <output id="speed-label">0.85×</output></label><input type="range" id="speed" min="0.5" max="1.2" step="0.05" value="0.85" aria-label="朗读语速"></div><div class="audio-actions"><button id="listen-page" class="primary-button">▷ 朗读本页</button><button id="stop-audio" class="square-button" aria-label="停止朗读">■</button></div><button id="voice-preview" class="text-button">试听这个声音 ↗</button><div id="audio-status" class="tiny" role="status"></div></section>
+          <section class="audio-card"><div class="card-kicker">ESCUCHA Y REPITE</div><div class="card-title"><h3>让耳朵先熟悉它</h3><span class="headphones">♫</span></div><p>听一句，再轻轻跟读一句。</p><label class="field-label" for="voice">朗读声音</label><select id="voice"><option>正在寻找西语声音…</option></select><div class="voice-help" id="voice-info"></div><div class="speed-row"><label for="speed">语速 <output id="speed-label">0.85×</output></label><input type="range" id="speed" min="0.1" max="1.2" step="0.05" value="0.85" aria-label="朗读语速"></div><div class="audio-actions"><button id="listen-page" class="primary-button">▷ 朗读本页</button><button id="stop-audio" class="square-button" aria-label="停止朗读">■</button></div><button id="voice-preview" class="text-button">试听这个声音 ↗</button><div id="audio-status" class="tiny" role="status"></div></section>
           <section class="daily-card"><div class="card-kicker">UN POQUITO CADA DÍA</div><h3>今天，留 15 分钟给自己</h3><button data-task="listen" class="task-row"><span class="task-check">○</span><span>听一小段课文<small>先听懂大意，不急着查词</small></span><b>3 min</b></button><button data-task="read" class="task-row"><span class="task-check">○</span><span>读一页，跟读三句<small>收藏今天真正想用的词</small></span><b>8 min</b></button><button data-task="review" class="task-row"><span class="task-check">○</span><span>复习，再说一句自己的话<small>学过的词，试着用出来</small></span><b>4 min</b></button><div class="daily-footer">按自己的节奏来，就很好。</div></section>
           <section class="word-preview"><span class="card-kicker">MIS PALABRAS</span><div class="card-title"><h3>装进口袋的词</h3><button id="open-words" class="text-button">查看 ↗</button></div><div id="recent-words"><p class="muted">遇到喜欢的词，点一下 ☆<br>下次见面，就更熟悉了。</p></div></section>
         </aside>

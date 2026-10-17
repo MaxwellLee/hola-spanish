@@ -1,5 +1,5 @@
 import {escapeHTML as esc,spanishParts} from './core.js';
-import {say,stopSpeech,getLearningContext} from './app.js';
+import {say,stopSpeech,getLearningContext} from './app.js?v=speed-20261017';
 import {createSpeechDialogue} from './speech-dialogue.js';
 
 const character='<img src="assets/luna-v2.png" alt="" width="1024" height="1536">';
