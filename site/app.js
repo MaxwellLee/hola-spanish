@@ -11,7 +11,7 @@ state.words = state.words.filter(w=>w && typeof w.text==='string' && typeof w.me
 state.size = Math.max(15,Math.min(28,Number(state.size)||19));
 state.speed = Math.max(.1,Math.min(1.2,Number(state.speed)||.85));
 if(!['text','scan','compare'].includes(state.view))state.view='text';
-let manifest, glossary = {}, pageData, voices = [], renderId = 0, speechId = 0, utterance, selection = '', selectionMeaning = '', selectionVersion = 0, searchIndex, toastTimer, selectionTimer, searchTimer;
+let manifest, glossary = {}, pageData, voices = [], renderId = 0, speechId = 0, utterance, speechDone, selection = '', selectionMeaning = '', selectionVersion = 0, searchIndex, toastTimer, selectionTimer, searchTimer;
 const cache = new Map();
 const translationCache = new Map();
 function save() { try { localStorage.setItem(storageKey,JSON.stringify(state)); } catch { toast('浏览器暂时不能保存进度，请先导出生词备份。'); } }
@@ -63,8 +63,8 @@ function loadVoices(){
   if(voices.some(v=>v.voiceURI===state.voice))$('voice').value=state.voice;
   $('voice-info').textContent=voices.length?`检测到 ${voices.length} 个西语声音。先试听，再选择喜欢的音色。`:'设备尚未列出西语声音；可先试听，若无声请在系统语音设置中添加西班牙语。';
 }
-function stopSpeech(){speechId++;if('speechSynthesis'in window)speechSynthesis.cancel();document.querySelectorAll('.playing').forEach(e=>e.classList.remove('playing'));$('audio-status').textContent='';$('mobile-listen').textContent='▷ 朗读本页';}
-function say(text,element,chain=false){
+function stopSpeech(){speechId++;speechDone?.(false);if('speechSynthesis'in window)speechSynthesis.cancel();document.querySelectorAll('.playing').forEach(e=>e.classList.remove('playing'));$('audio-status').textContent='';$('mobile-listen').textContent='▷ 朗读本页';}
+function say(text,element,chain=false,language='es-ES'){
   if(!('speechSynthesis'in window)){toast('这个浏览器暂不支持朗读。');return Promise.resolve(false);}
   if(!chain)stopSpeech();const current=speechId;
   // shortcut: browser voice inventory varies by device; provision hosted audio for identical voices on every device.
@@ -72,14 +72,19 @@ function say(text,element,chain=false){
   const split=chunks.flatMap(t=>{const out=[];while(t.length>180){let cut=t.lastIndexOf(' ',180);if(cut<1)cut=180;out.push(t.slice(0,cut));t=t.slice(cut).trim();}if(t.trim())out.push(t.trim());return out;});
   noteActivity();element?.classList.add('playing');$('audio-status').textContent='正在朗读…';
   return new Promise(resolve=>{
+    let settled=false;
+    const finish=success=>{if(settled)return;settled=true;if(speechDone===finish)speechDone=null;element?.classList.remove('playing');if(current===speechId)$('audio-status').textContent='';resolve(success);};
+    speechDone=finish;
     function next(){
-      if(current!==speechId){element?.classList.remove('playing');resolve(false);return;}
-      const chunk=split.shift();if(!chunk){element?.classList.remove('playing');$('audio-status').textContent='';resolve(true);return;}
-      utterance=new SpeechSynthesisUtterance(chunk);utterance.lang='es-ES';utterance.rate=state.speed;
-      const voice=voices.find(v=>v.voiceURI===$('voice').value)||voices.find(v=>v.lang==='es-ES')||voices[0];if(voice){utterance.voice=voice;utterance.lang=voice.lang;}
+      if(settled)return;
+      if(current!==speechId){finish(false);return;}
+      const chunk=split.shift();if(!chunk){finish(true);return;}
+      utterance=new SpeechSynthesisUtterance(chunk);utterance.lang=language;utterance.rate=state.speed;
+      const available=language==='es-ES'?voices:speechSynthesis.getVoices().filter(v=>/^zh(?:-|_)/i.test(v.lang));
+      const voice=(language==='es-ES'?available.find(v=>v.voiceURI===$('voice').value):null)||available.find(v=>v.lang===language)||available[0];if(voice){utterance.voice=voice;utterance.lang=voice.lang;}
       utterance.onend=next;
-      utterance.onerror=e=>{element?.classList.remove('playing');if(current===speechId&&!['canceled','interrupted'].includes(e.error)){toast('朗读未成功，请换一个声音，或在设备设置中添加西班牙语语音。');$('audio-status').textContent='朗读未成功';}resolve(false);};
-      speechSynthesis.speak(utterance);
+      utterance.onerror=e=>{if(settled)return;finish(false);if(current===speechId&&!['canceled','interrupted'].includes(e.error)){const reason={'not-allowed':'浏览器未允许自动播放，请点击回复下方的朗读按钮重试。','language-unavailable':'设备缺少对应语言的语音，请在系统设置中添加。','voice-unavailable':'所选声音不可用，请更换声音。','network':'语音服务连接失败，请检查网络后重试。'}[e.error]||'语音合成未成功，请更换声音后重试。';toast(reason);$('audio-status').textContent=reason;}};
+      try{speechSynthesis.speak(utterance);}catch{utterance.onerror({error:'synthesis-failed'});}
     }next();
   });
 }

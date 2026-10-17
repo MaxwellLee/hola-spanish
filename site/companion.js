@@ -1,6 +1,6 @@
 import {escapeHTML as esc,spanishParts} from './core.js';
-import {say,stopSpeech,getLearningContext} from './app.js?v=speed-20261017';
-import {createSpeechDialogue} from './speech-dialogue.js';
+import {say,stopSpeech,getLearningContext} from './app.js?v=dialogue-20261018';
+import {createSpeechDialogue} from './speech-dialogue.js?v=dialogue-20261018';
 
 const character='<img src="assets/luna-v2.png" alt="" width="1024" height="1536">';
 const shell=document.createElement('div');shell.id='companion';
@@ -9,7 +9,7 @@ shell.innerHTML=`
   <section id="pet-panel" class="pet-panel" role="dialog" aria-label="Luna 西语学习伙伴" hidden>
     <header class="pet-header"><div class="pet-mini">${character}</div><div><h2>Luna <span>你的西语练习伙伴</span></h2><small id="pet-status">AI 尚未连接</small></div><button id="pet-settings" class="icon-button" aria-label="连接设置">⚙</button><button id="pet-close" class="icon-button" aria-label="收起伙伴">×</button></header>
     <div class="pet-modes"><button data-mode="chat" class="active">情景对话</button><button data-mode="explain">随文解释</button><button data-mode="correct">温和纠错</button><button data-mode="quiz">小挑战</button></div>
-    <div id="pet-messages" class="pet-messages" aria-live="polite"><div class="pet-message assistant"><p>¡Hola! 我是 Luna。<br>从一句简单的西班牙语开始吧。</p><small>连接 AI 后，可以打字，也可以点「语音对话」。说一句，我会回复并朗读西语，再听你继续说。</small></div></div>
+    <div id="pet-messages" class="pet-messages" aria-live="polite"><div class="pet-message assistant"><p>¡Hola! 我是 Luna。<br>从一句简单的西班牙语开始吧。</p><small>点一次「语音对话」，停顿后我会回复，读完继续听你说。想提前接话时，点「打断，轮到我」。</small></div></div>
     <div id="pet-error" class="pet-error" role="status" hidden></div>
     <div class="pet-voice-tools"><button id="pet-voice" type="button" aria-pressed="false"><span aria-hidden="true">🎙</span> 语音对话</button><label for="pet-language" class="sr-only">我说的语言</label><select id="pet-language" aria-label="我说的语言"><option value="es-ES">西班牙语</option><option value="zh-CN">中文</option></select><button id="pet-finish" type="button" hidden>说完了</button></div>
     <div id="pet-voice-status" class="pet-voice-status" role="status">点击后允许麦克风；语音由浏览器语音服务转写。</div>
@@ -32,12 +32,14 @@ try{
   if(saved?.endpoint===endpoint&&typeof saved.access==='string'&&saved.access.length>=16&&saved.access.length<=128)access=saved.access;
 }catch{}
 const prompts={chat:'请陪我练习西班牙语自我介绍。我是零基础，请每次只问一句，必要时给中文提示。',explain:'请用简单中文解释当前页最值得掌握的一个西班牙语句型，并给我一个替换练习。',correct:'请帮我改下面这句西班牙语：',quiz:'请根据当前页出一道适合零基础的题，等我回答后再解释答案。'};
+function replyAudio(reply){const spanish=spanishParts(reply).join(' ');return spanish?{text:spanish,language:'es-ES'}:/[\u3400-\u9fff]/.test(reply)?{text:reply,language:'zh-CN'}:null;}
+function speakReply(reply){const audio=replyAudio(reply);return audio?say(audio.text,undefined,false,audio.language):Promise.resolve(true);}
 const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 const voice=createSpeechDialogue({
   Recognition,language:()=>$('pet-language').value,
   onTranscript:text=>{$('pet-input').value=text;},
   onTurn:text=>send(text,true),
-  speak:reply=>{const text=spanishParts(reply).join(' ');return text?say(text):Promise.resolve(false);},
+  speak:speakReply,
   cancelSpeech:stopSpeech,
   onState:phase=>{
     const active=phase!=='idle';
@@ -45,10 +47,12 @@ const voice=createSpeechDialogue({
     $('pet-voice').setAttribute('aria-pressed',String(active));
     $('pet-voice').classList.toggle('listening',['starting','listening'].includes(phase));
     $('pet-language').disabled=active||busy||!Recognition;
-    $('pet-finish').hidden=phase!=='listening';
+    $('pet-finish').hidden=!['listening','speaking'].includes(phase);
+    $('pet-finish').textContent=phase==='speaking'?'打断，轮到我':'说完了';
+    $('pet-finish').onclick=()=>phase==='speaking'?voice.interrupt():voice.finish();
     $('pet-input').readOnly=active;
     $('pet-send').disabled=active||busy;
-    $('pet-voice-status').textContent={idle:Recognition?'语音已停止。可以打字，或重新开始语音对话。':'此浏览器暂不支持语音对话，可使用键盘麦克风输入。',starting:'正在打开麦克风…',listening:'正在听 · 说一句，停顿后自动发送',thinking:'已听到 · Luna 正在想…',speaking:'Luna 正在回答 · 读完后继续听你说'}[phase];
+    $('pet-voice-status').textContent={idle:Recognition?'语音已停止。可以打字，或重新开始语音对话。':'此浏览器暂不支持语音对话，可使用键盘麦克风输入。',starting:'正在打开麦克风…',listening:'正在听 · 可以慢慢说，停顿后自动发送',thinking:'已听到 · Luna 正在想…',speaking:'Luna 正在回答 · 可点「打断，轮到我」接话',waiting:'语音保持开启 · 准备继续听你说'}[phase];
   },
   onError:showError,
   onStop:()=>{if(voiceRequest)controller?.abort();}
@@ -71,9 +75,9 @@ function setMode(next){
 function addMessage(role,text){
   const element=document.createElement('div');element.className=`pet-message ${role}`;
   const p=document.createElement('p');p.textContent=text;element.append(p);
-  if(role==='assistant'){
-    const listen=document.createElement('button');listen.className='text-button';listen.textContent='▷ 听西语部分';
-    listen.onclick=()=>{voice.stop();say(spanishParts(text).join(' '));};element.append(listen);
+  if(role==='assistant'&&replyAudio(text)){
+    const listen=document.createElement('button');listen.className='text-button';listen.textContent=replyAudio(text).language==='es-ES'?'▷ 听西语部分':'▷ 听中文回复';
+    listen.onclick=()=>{voice.stop();speakReply(text);};element.append(listen);
   }
   $('pet-messages').append(element);$('pet-messages').scrollTop=$('pet-messages').scrollHeight;
 }
@@ -143,7 +147,6 @@ $('pet-voice').onclick=()=>{
   if(busy||!connected())return;
   $('pet-error').hidden=true;$('pet-input').value='';voice.start();
 };
-$('pet-finish').onclick=()=>voice.finish();
 window.addEventListener('hola:explain',e=>{open();if(busy)return;setMode('explain');$('pet-input').value=`请解释这句西班牙语的意思和用法：${String(e.detail).slice(0,500)}`;$('pet-input').focus();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('modal').open&&!$('pet-panel').hidden)close();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)voice.stop();});
