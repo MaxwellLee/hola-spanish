@@ -24,6 +24,7 @@ jobs:
       - run: node tools/check-core.mjs
       - run: node tools/check-backend.mjs
       - run: node tools/check-speech.mjs
+      - run: node tools/check-tencent.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

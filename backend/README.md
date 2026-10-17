@@ -1,5 +1,7 @@
 # Luna 后端接入
 
+腾讯云国内部署使用独立上传包，见 [腾讯云 SCF 部署说明](TENCENT.md)。目前尚未切换网站默认后端，以下记录的是已有 Cloudflare 部署。
+
 网页本身无需密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 后端已部署到 `https://hola-study-companion.maxwelllee-hola.workers.dev`，学习网页已预填此地址。当前选择 Kimi Code 会员接口，密钥和独立学习口令保存在 Cloudflare Secret。
 
 已有部署请从下面第 3 步开始；第 1–2 步供重新部署时参考。
