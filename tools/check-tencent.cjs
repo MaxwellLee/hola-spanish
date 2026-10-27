@@ -6,25 +6,26 @@ const data = {mode:'chat',messages:[{role:'user',content:'Hola'}],context:{page:
 const event = (overrides = {}) => ({httpMethod:'POST',path:'/api/chat',
   headers:{Origin:origin,Authorization:`Bearer ${access}`},body:JSON.stringify(data),...overrides});
 const realFetch = globalThis.fetch;
-const originalKey = process.env.MOONSHOT_API_KEY, originalAccess = process.env.STUDY_ACCESS_TOKEN;
+const originalKey = process.env.DEEPSEEK_API_KEY, originalAccess = process.env.STUDY_ACCESS_TOKEN;
 const realNow = Date.now;
 let now = realNow(), calls = 0;
 (async () => {
   Date.now = () => now;
-  delete process.env.MOONSHOT_API_KEY;
+  delete process.env.DEEPSEEK_API_KEY;
   delete process.env.STUDY_ACCESS_TOKEN;
   const health = await handler({httpMethod:'GET',path:'/health'});
-  assert.equal(health.statusCode,200);assert.equal(JSON.parse(health.body).configured,false);
+  assert.equal(health.statusCode,200);assert.equal(JSON.parse(health.body).configured,false);assert.equal(JSON.parse(health.body).provider,'deepseek');
   assert.equal((await handler(event())).statusCode,503);
   const preflight = await handler(event({httpMethod:'OPTIONS',body:undefined}));
   assert.equal(preflight.statusCode,204);
   assert.equal(preflight.headers['access-control-allow-origin'],origin);
-  process.env.MOONSHOT_API_KEY = 'TEST_ONLY_NOT_A_KEY';process.env.STUDY_ACCESS_TOKEN = access;
+  process.env.DEEPSEEK_API_KEY = 'TEST_ONLY_NOT_A_KEY';process.env.STUDY_ACCESS_TOKEN = access;
   globalThis.fetch = async (url, init) => {
     calls++;
-    assert.equal(url,'https://api.kimi.com/coding/v1/chat/completions');
+    assert.equal(url,'https://api.deepseek.com/chat/completions');
     assert.equal(init.headers['User-Agent'],'HolaSpanishStudy/1.0');
-    assert.equal(JSON.parse(init.body).model,'kimi-for-coding');
+    const payload=JSON.parse(init.body);assert.equal(payload.model,'deepseek-flash');assert.deepEqual(payload.thinking,{type:'disabled'});assert.equal(payload.reasoning_effort,undefined);
+    assert.equal(init.headers.Authorization,'Bearer TEST_ONLY_NOT_A_KEY');
     return new Response(JSON.stringify({choices:[{message:{content:'¡Hola!'},finish_reason:'stop'}]}));
   };
   assert.equal((await handler(event({headers:{Origin:'https://wrong.example'}}))).statusCode,403);
@@ -40,7 +41,7 @@ let now = realNow(), calls = 0;
   const first = concurrent.find(r=>r.statusCode===200);
   assert.equal(JSON.parse(first.body).reply,'¡Hola!');assert.equal(calls,1);
   assert.equal(first.headers['access-control-allow-origin'],origin);
-  assert(!first.body.includes(process.env.MOONSHOT_API_KEY));
+  assert.equal(JSON.parse(first.body).source,'deepseek');assert(!first.body.includes(process.env.DEEPSEEK_API_KEY));
   for (const status of [401,403,429,500]) {
     now += 6000;
     globalThis.fetch = async () => new Response(JSON.stringify({error:{message:'PRIVATE_UPSTREAM_DETAIL',type:'denied:<script>'}}),{status});
@@ -51,9 +52,9 @@ let now = realNow(), calls = 0;
   now += 6000;globalThis.fetch = async () => { throw Error('PRIVATE_NETWORK_DETAIL'); };
   const failure = await handler(event());assert.equal(failure.statusCode,504);
   assert(!failure.body.includes('PRIVATE_NETWORK_DETAIL'));
-  console.log('Tencent adapter checks passed: event format, UTF-8 size, auth, CORS, member route, concurrent throttle, safe upstream failures. No live Kimi calls.');
+  console.log('Tencent adapter checks passed: event format, UTF-8 size, auth, CORS, DeepSeek route and non-thinking mode, concurrent throttle, safe upstream failures. No live model calls.');
 })().catch(error => { console.error(error);process.exitCode=1; }).finally(() => {
   globalThis.fetch=realFetch;Date.now=realNow;
-  if(originalKey===undefined)delete process.env.MOONSHOT_API_KEY;else process.env.MOONSHOT_API_KEY=originalKey;
+  if(originalKey===undefined)delete process.env.DEEPSEEK_API_KEY;else process.env.DEEPSEEK_API_KEY=originalKey;
   if(originalAccess===undefined)delete process.env.STUDY_ACCESS_TOKEN;else process.env.STUDY_ACCESS_TOKEN=originalAccess;
 });

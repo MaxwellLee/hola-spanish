@@ -1,8 +1,8 @@
 # 腾讯云 SCF 部署 Luna
 
-此版本接收学习网页的 `/api/chat` 请求，使用 Kimi Code 会员接口。复用原后端的学习提示、参数校验、口令验证和上游错误处理，不调用 Cloudflare，也不自动切换到按量付费的开放平台。
+此版本接收学习网页的 `/api/chat` 请求，使用 DeepSeek API。复用原后端的学习提示、参数校验、口令验证和上游错误处理，不自动回退到 Kimi 或 Cloudflare。
 
-当前部署：`https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com`。2026-10-17 已从当前电脑不经系统代理验证：健康检查 200、浏览器预检 204、无口令请求 401、带学习口令的会员对话 200（一次测试约 2.8 秒）。这不是所有运营商或手机网络的可用性保证。网页默认地址已切换到此服务；旧浏览器保存的原 Cloudflare 地址会自动迁移，自定义地址保持不变。本文按 2026-10-17 核对的官方文档编写，控制台字段以实际界面为准。
+当前部署：`https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com`。2026-10-28 已验证 `/health` 返回 `provider: deepseek`、`model: deepseek-flash`、`configured: true`，公开网页带原学习口令的真实对话返回 200 和 `source: deepseek`。测试还确认刷新后恢复已保存的设备配置。这不是所有运营商或手机网络的可用性保证。旧浏览器保存的原 Cloudflare 地址会自动迁移，自定义地址保持不变。控制台字段以实际界面为准。
 
 ## 1. 创建函数
 
@@ -15,11 +15,11 @@
 | 函数名称 | `hola-luna` |
 | 运行环境 | Node.js 20.19 |
 | 代码提交方式 | 本地上传 ZIP 包 |
-| ZIP 文件 | 项目 `private-output/hola-luna-tencent.zip` |
+| ZIP 文件 | 项目 `private-output/hola-luna-tencent-deepseek.zip` |
 | 执行方法 | `index.main_handler` |
 | 内存 | 256 MB |
 | 执行超时 | 60 秒 |
-| 公网访问 | 开启，用于请求 Kimi |
+| 公网访问 | 开启，用于请求 DeepSeek |
 | VPC / 私有网络 | 不配置；本项目不需要数据库或内网资源 |
 | 触发器 | 使用函数 URL，不选择旧 API 网关或定时器 |
 
@@ -31,18 +31,18 @@ ZIP 根目录必须直接包含 `index.js`、`worker.mjs`、`package.json`，不
 
 | 名称 | 填写内容 |
 | --- | --- |
-| `MOONSHOT_API_KEY` | 已有 Kimi Code 会员密钥；不是后来新建的开放平台密钥 |
+| `DEEPSEEK_API_KEY` | DeepSeek 开放平台 API 密钥 |
 | `STUDY_ACCESS_TOKEN` | 项目 `private-output/学习口令.txt` 中已有的独立学习口令 |
 
-该包已固定：网站源 `https://maxwelllee.github.io`、会员地址 `https://api.kimi.com/coding/v1`、模型 `kimi-for-coding`。换部署平台不会把会员额度转成开放平台余额。
+该包已固定：网站源 `https://maxwelllee.github.io`、接口 `https://api.deepseek.com/chat/completions`。默认模型 `deepseek-flash`，可选环境变量 `DEEPSEEK_MODEL` 覆盖；请求使用 `thinking: {type: "disabled"}`。旧 `MOONSHOT_API_KEY` 不再被腾讯云入口读取；DeepSeek 密钥缺失时直接报告未配置。
 
-先用以下测试事件检查函数能否启动，不会调用 Kimi：
+先用以下测试事件检查函数能否启动，不会调用模型：
 
 ```json
 {"httpMethod":"GET","path":"/health","headers":{}}
 ```
 
-正常返回 `statusCode: 200`，`body` 内 `ok: true`；两个环境变量齐备时 `configured: true`。这只验证函数启动和配置存在，不代表密钥有效或 Kimi 已连通。
+正常返回 `statusCode: 200`，`body` 内 `ok: true` 和 `provider: deepseek`；两个环境变量齐备时 `configured: true`。这只验证函数启动和配置存在，不代表密钥有效；仍需发送一句对话验证。
 
 ## 3. 创建函数 URL
 
@@ -63,7 +63,7 @@ ZIP 根目录必须直接包含 `index.js`、`worker.mjs`、`package.json`，不
 
 ## 用量与运行限制
 
-- 此版本无需额外数据库，调用仍受 Kimi 会员额度和频率限制。
+- 此版本无需额外数据库，调用使用 DeepSeek API 账户余额，受其频率与用量规则限制。
 - 来源校验、学习口令、输入长度、回复长度和 35 秒上游超时均由后端执行。
 - 每个运行实例保留 5 秒请求间隔和每日 100 次计数，但实例重启或扩容会重新计数，**不是持久的全账户每日上限，也不是费用预算**。需要严格的全账户日限额时，再接入共享持久存储。Cloudflare 原部署的 Durable Object 计数机制仍然保持不变。
 - 腾讯云的调用、运行及外网流量按其规则计费；新用户权益不等于所有项目永久免费。
@@ -77,4 +77,4 @@ ZIP 根目录必须直接包含 `index.js`、`worker.mjs`、`package.json`，不
 - [创建函数 URL](https://cloud.tencent.com/document/product/583/100227)
 - [环境变量](https://cloud.tencent.com/document/product/583/30228)
 - [SCF 计费](https://cloud.tencent.com/document/product/583/17299)
-- [Kimi Code API 接入与平台定位](https://www.kimi.com/code/docs/)
+- [DeepSeek API](https://api-docs.deepseek.com/)

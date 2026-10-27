@@ -1,8 +1,8 @@
 # Luna 后端接入
 
-当前默认后端是腾讯云广州 SCF：`https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com`。2026-10-17 已验证无需系统代理即可完成一次真实 Kimi Code 会员对话。配置、测试与计数边界见 [腾讯云 SCF 部署说明](TENCENT.md)。
+当前默认后端是腾讯云广州 SCF：`https://1508919580-l9m692upzz.ap-guangzhou.tencentscf.com`。2026-10-28 已验证健康检查返回 `provider: deepseek`、`model: deepseek-flash`，公开网页真实对话返回 `source: deepseek`。配置、测试与计数边界见 [腾讯云 SCF 部署说明](TENCENT.md)。
 
-网页本身无需 Kimi 密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 使用独立学习口令。当前会员密钥和口令配置在腾讯云环境变量中。
+网页本身无需模型 API 密钥：教材、合成朗读、划词翻译与生词复习均独立工作。Luna 使用独立学习口令。当前 `DEEPSEEK_API_KEY` 和原 `STUDY_ACCESS_TOKEN` 配置在腾讯云环境变量中。DeepSeek 请求关闭思考模式，不自动回退到 Kimi。
 
 ## 保留的 Cloudflare 部署
 

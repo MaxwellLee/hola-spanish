@@ -39,7 +39,7 @@ const originalCSS=execFileSync('git',['show','e00a9df:site/styles.css'],{encodin
       await page.goto(base+'#page=17');await openSettings();
       assert(await page.locator('#ai-remember').isChecked());
       await page.locator('#ai-access').fill('sk-'+'x'.repeat(25));await page.locator('#save-ai-settings').click();
-      assert.match(await page.locator('#ai-config-note').textContent(),/不是 Kimi API/);
+      assert.match(await page.locator('#ai-config-note').textContent(),/不是 模型 API/);
       assert.equal(await page.evaluate(()=>localStorage.getItem('hola-ai-connection')),null);
       await page.locator('#ai-endpoint').fill('https://study.example');
       await page.locator('#ai-access').fill('test-only-study-access');await page.locator('#save-ai-settings').click();

@@ -12,7 +12,7 @@ foreach ($file in $files) {
     throw 'Credential-like value found; package creation stopped.'
   }
 }
-$archive = Join-Path $outputDir 'hola-luna-tencent.zip'
+$archive = Join-Path $outputDir 'hola-luna-tencent-deepseek.zip'
 Compress-Archive -LiteralPath $files -DestinationPath $archive -Force
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead($archive)

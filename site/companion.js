@@ -1,6 +1,6 @@
 import {escapeHTML as esc,spanishParts} from './core.js';
-import {say,stopSpeech,getLearningContext} from './app.js?v=dialogue-20261018';
-import {createSpeechDialogue} from './speech-dialogue.js?v=dialogue-20261018';
+import {say,stopSpeech,getLearningContext} from './app.js?v=deepseek-20261028';
+import {createSpeechDialogue} from './speech-dialogue.js?v=deepseek-20261028';
 
 const character='<img src="assets/luna-v2.png" alt="" width="1024" height="1536">';
 const shell=document.createElement('div');shell.id='companion';
@@ -64,7 +64,7 @@ function open(){$('pet-panel').hidden=false;$('pet-toggle').hidden=true;$('pet-t
 function close(){voice.stop();$('pet-panel').hidden=true;$('pet-toggle').hidden=false;$('pet-toggle').setAttribute('aria-expanded','false');$('pet-toggle').focus();}
 function connected(){
   if(endpoint&&access)return true;
-  showError('Luna 还未连接 AI。请先点右上角齿轮，填入你的学习口令；这里不接收 Kimi API 密钥。');return false;
+  showError('Luna 还未连接 AI。请先点右上角齿轮，填入你的学习口令；这里不接收 模型 API 密钥。');return false;
 }
 function setMode(next){
   voice.stop();mode=next;messages=[];
@@ -83,7 +83,7 @@ function addMessage(role,text){
 }
 function settings(){
   voice.stop();const dlg=$('modal');$('modal-title').textContent='连接 Luna';
-  $('modal-body').innerHTML=`<p>首次输入学习口令，保存后就能开始练习。<b>这里不填写 Kimi API 密钥。</b></p><label class="ai-field">后端地址<input id="ai-endpoint" type="url" value="${esc(endpoint)}" autocomplete="off"></label><label class="ai-field">学习口令<input id="ai-access" type="password" placeholder="独立学习口令，至少 16 位" autocomplete="off"></label><label class="ai-remember"><input id="ai-remember" type="checkbox"><span>记住这台设备，下次直接使用</span></label><p class="tiny">学习口令保存在此浏览器。手机与 iPad 各保存一次；清除网站数据或使用无痕模式后可能需要重填。对话只保留在当前页面。</p><div class="review-toolbar"><button class="primary-button" id="save-ai-settings">保存并连接</button><button class="quiet-button" id="disconnect-ai">退出并清除口令</button></div><p id="ai-config-note" class="tiny" role="status">尚未连接 AI 时，仍可使用教材点读、翻译和生词复习。</p>`;
+  $('modal-body').innerHTML=`<p>首次输入学习口令，保存后就能开始练习。<b>这里不填写 模型 API 密钥。</b></p><label class="ai-field">后端地址<input id="ai-endpoint" type="url" value="${esc(endpoint)}" autocomplete="off"></label><label class="ai-field">学习口令<input id="ai-access" type="password" placeholder="独立学习口令，至少 16 位" autocomplete="off"></label><label class="ai-remember"><input id="ai-remember" type="checkbox"><span>记住这台设备，下次直接使用</span></label><p class="tiny">学习口令保存在此浏览器。手机与 iPad 各保存一次；清除网站数据或使用无痕模式后可能需要重填。对话只保留在当前页面。</p><div class="review-toolbar"><button class="primary-button" id="save-ai-settings">保存并连接</button><button class="quiet-button" id="disconnect-ai">退出并清除口令</button></div><p id="ai-config-note" class="tiny" role="status">尚未连接 AI 时，仍可使用教材点读、翻译和生词复习。</p>`;
   $('ai-access').value=access;$('ai-remember').checked=remember;
   if(!dlg.open)dlg.showModal();
   $('save-ai-settings').onclick=()=>{
@@ -91,8 +91,8 @@ function settings(){
       const url=new URL($('ai-endpoint').value.trim());
       if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||!['','/'].includes(url.pathname))throw Error();
       const nextAccess=$('ai-access').value.trim();
-      if(/^sk-/i.test(nextAccess)){$('ai-config-note').textContent='这里填写独立学习口令，不是 Kimi API 密钥。';return;}
-      if(nextAccess.length<16||nextAccess.length>128){$('ai-config-note').textContent='请输入 16–128 位的学习口令（不是 Kimi 密钥）。';return;}
+      if(/^sk-/i.test(nextAccess)){$('ai-config-note').textContent='这里填写独立学习口令，不是 模型 API 密钥。';return;}
+      if(nextAccess.length<16||nextAccess.length>128){$('ai-config-note').textContent='请输入 16–128 位的学习口令（不是 模型 API 密钥）。';return;}
       endpoint=url.origin;access=nextAccess;remember=$('ai-remember').checked;
       let stored=true;
       try{

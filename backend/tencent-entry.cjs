@@ -17,10 +17,10 @@ const state = {storage: {transaction(fn) {
 exports.main_handler = async function(event) {
   const env = {
     ALLOWED_ORIGIN: 'https://maxwelllee.github.io',
-    MOONSHOT_BASE_URL: 'https://api.kimi.com/coding/v1',
-    KIMI_MODEL: 'kimi-for-coding',
+    AI_PROVIDER: 'deepseek',
+    DEEPSEEK_MODEL: process.env.DEEPSEEK_MODEL || 'deepseek-flash',
     DAILY_REQUEST_LIMIT: '100',
-    MOONSHOT_API_KEY: process.env.MOONSHOT_API_KEY,
+    DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
     STUDY_ACCESS_TOKEN: process.env.STUDY_ACCESS_TOKEN
   };
   const output = (statusCode, data) => ({statusCode, headers: {
@@ -30,7 +30,8 @@ exports.main_handler = async function(event) {
   const path = event?.path;
   if (method === 'GET' && (path === '/' || path === '/health')) {
     return output(200, {ok: true, service: 'hola-luna-tencent',
-      configured: Boolean(env.MOONSHOT_API_KEY && env.STUDY_ACCESS_TOKEN?.length >= 16)});
+      provider:env.AI_PROVIDER,model:env.DEEPSEEK_MODEL,
+      configured: Boolean(env.DEEPSEEK_API_KEY && env.STUDY_ACCESS_TOKEN?.length >= 16)});
   }
   let request;
   try {
